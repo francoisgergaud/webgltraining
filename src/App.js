@@ -9,27 +9,45 @@ import WebGLCanvas from './WebGLCanvas.js';
 import VertexShader from './vertexShader.js';
 import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
+import {Knob} from "react-rotary-knob";
 
 class App extends React.Component {
 
+  // the constructor: initialize the state
   constructor(props){
     super(props);
     this.state = {
-      glContext: null,
-      animationState: false,
-      translateDirectionX: true,
-      translateDirectionY: true,
-      translation: [0, 0],
-      width: 100,
-      height: 30,
-      color: [Math.random(), Math.random(), Math.random(), 1],
-      program: null,
-      timer: null,
-      translationX: 10,
-      translationY: 10
+      animationContext: {
+        animationState: false,
+        translateDirectionX: true,
+        translateDirectionY: true,
+        translationOffsetX: 10,
+        translationOffsetY: 10,
+        timer: null,
+      },
+      graphicContext: {
+        glContext: null,
+        program: null,
+        width: 100,
+        height: 30,
+        positionAttributeLocation: null,
+        rotationLocation: null, 
+        scaleLocation: null, 
+        resolutionUniformLocation: null, 
+        colorUniformLocation: null, 
+        positionBuffer: null, 
+      },
+      transformation : {
+        color: [Math.random(), Math.random(), Math.random(), 1],
+        translation: [0, 0],
+        rotationAngle: 0,
+        scaleX: 1, 
+        scaleY: 1,
+      }
     };
   }
 
+  //component render
   render() {
     return (
       <Container fluid className="p-3 MainRow">
@@ -39,27 +57,94 @@ class App extends React.Component {
           </Col>
           <Col>
             <>
-              <div>{'x: ' + this.state.translationX}</div>
+              <div>{'translation offset x: ' + this.state.animationContext.translationOffsetX}</div>
               <Slider
                 axis="x"
                 xstep={1}
                 xmin={1}
                 xmax={20}
-                x={this.state.translationX}
-                onChange={({ x }) => this.setState({ translationX: x})}
+                x={this.state.animationContext.translationOffsetX}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      animationContext: {
+                        ...this.state.animationContext,
+                        translationOffsetX: x,
+                      },
+                    });
+                  }
+                }
               />
             </>
             <>
-              <div>{'y: ' + this.state.translationY}</div>
+              <div>{'translation offset y: ' + this.state.animationContext.translationOffsetY}</div>
               <Slider
                 axis="x"
                 xstep={1}
                 xmin={1}
                 xmax={20}
-                x={this.state.translationY}
-                onChange={({ x }) => this.setState({ translationY: x})}
+                x={this.state.animationContext.translationOffsetY}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      animationContext: {
+                        ...this.state.animationContext,
+                        translationOffsetY: x,
+                      },
+                    });
+                  }}
               />
             </>
+            <>
+              <div>{'scaleX: ' + this.state.transformation.scaleX}</div>
+              <Slider
+                axis="x"
+                xstep={1}
+                xmin={1}
+                xmax={20}
+                x={this.state.transformation.scaleX}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      transformation: {
+                        ...this.state.transformation,
+                        scaleX: x,
+                      },
+                    });
+                  }}
+              />
+            </>
+            <>
+              <div>{'scaleY: ' + this.state.transformation.scaleY}</div>
+              <Slider
+                axis="x"
+                xstep={1}
+                xmin={1}
+                xmax={20}
+                x={this.state.transformation.scaleY}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      transformation: {
+                        ...this.state.transformation,
+                        scaleY: x,
+                      },
+                    });
+                  }}
+              />
+            </>
+
+            <div>
+              rotation: 
+                <div style={{display:'inline-block'}}>
+                  <Knob 
+                    onChange={this.changeRotationValue.bind(this)}
+                    min={0} 
+                    max={360} 
+                    value={this.state.transformation.rotationAngle}
+                  />
+                </div>
+              </div>
             <div>
               <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
             </div>
@@ -69,107 +154,76 @@ class App extends React.Component {
     );
   }
 
-  handleAnimationClick() {
-    if(!this.state.animationState){
-      this.setState({timer: setInterval(
-        function(){
-          if(this.state.translation[0] > this.state.width){
-            this.setState({translateDirectionX: false});
-          } else if (this.state.translation[0] < 0){
-            this.setState({translateDirectionX: true});
-          } 
-          if(this.state.translateDirectionX){
-            this.state.translation[0] += this.state.translationX;
-          } else {
-            this.state.translation[0] -= this.state.translationX;
-          }
-          if(this.state.translation[1] > this.state.height){
-            this.setState({translateDirectionY: false});
-          } else if (this.state.translation[1] < 0){
-            this.setState({translateDirectionY: true});
-          } 
-          if(this.state.translateDirectionY){
-            this.state.translation[1] += this.state.translationY;
-          } else {
-            this.state.translation[1] -= this.state.translationY;
-          }
-          this.drawScene(this.state.glContext, this.state.program, this.state.translation, this.state.positionAttributeLocation, this.state.translationLocation, this.state.resolutionUniformLocation, this.state.colorUniformLocation, this.state.positionBuffer, this.state.color);
-        }.bind(this)
-      , 25)});
-    }else {
-      clearInterval(this.state.timer);
-    }
-    this.setState({animationState: !this.state.animationState});
-  }
-
-
-  setGlContext(glContext, width, height) {
-    var vertexShaderSource = VertexShader;
-    var fragmentShaderSource = FragmentShader;
-    var vertexShader = this.createShader(glContext, glContext.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = this.createShader(glContext, glContext.FRAGMENT_SHADER, fragmentShaderSource);
-    var program = this.createProgram(glContext, vertexShader, fragmentShader);
+  //handler for rotation value change
+  changeRotationValue(rotationAngleDegree) {
     this.setState({
-      glContext: glContext, 
-      width: width, 
-      height: height,
-      program: program,
-      positionAttributeLocation: glContext.getAttribLocation(program, "a_position"),
-      translationLocation: glContext.getUniformLocation(program, "u_translation"),
-      resolutionUniformLocation: glContext.getUniformLocation(program, "u_resolution"),
-      colorUniformLocation: glContext.getUniformLocation(program, "u_color"),
-      positionBuffer: glContext.createBuffer()
+      transformation: {
+        ...this.state.transformation,
+        rotationAngle: rotationAngleDegree,
+      },
     });
-    
   }
 
-  createShader(gl, type, source) {
-    var shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (success) {
-      return shader;
+  //animate bounce the shape against the borders
+  animate() {
+    if(this.state.transformation.translation[0] > this.state.graphicContext.width){
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          translateDirectionX: false,
+        }
+      });
+    } else if (this.state.transformation.translation[0] < 0){
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          translateDirectionX: true,
+        }
+      });
+    } 
+    if(this.state.animationContext.translateDirectionX){
+      this.state.transformation.translation[0] += this.state.animationContext.translationOffsetX;
+    } else {
+      this.state.transformation.translation[0] -= this.state.animationContext.translationOffsetX;
     }
-    console.log(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-  }
-
-  createProgram(gl, vertexShader, fragmentShader) {
-    var program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
-      return program;
+    if(this.state.transformation.translation[1] > this.state.graphicContext.height){
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          translateDirectionY: false,
+        }
+      });
+    } else if (this.state.transformation.translation[1] < 0){
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          translateDirectionY: true,
+        }
+      });
+    } 
+    if(this.state.animationContext.translateDirectionY){
+      this.state.transformation.translation[1] += this.state.animationContext.translationOffsetY;
+    } else {
+      this.state.transformation.translation[1] -= this.state.animationContext.translationOffsetY;
     }
-    console.log(gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
+    this.drawScene(this.state.graphicContext, this.state.transformation);
   }
 
   // Draw a the scene.
-  drawScene(gl, program, translation, positionLocation, translationLocation, resolutionLocation, colorLocation, positionBuffer, color) {
-    //webglUtils.resizeCanvasToDisplaySize(gl.canvas);
-
+  drawScene(graphicContext, transformation) {
+    var gl = graphicContext.glContext;
     // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
     // Clear the canvas.
     gl.clear(gl.COLOR_BUFFER_BIT);
-
     // Tell it to use our program (pair of shaders)
-    gl.useProgram(program);
-
+    gl.useProgram(graphicContext.program);
     // Turn on the attribute
-    gl.enableVertexAttribArray(positionLocation);
-
+    gl.enableVertexAttribArray(graphicContext.positionAttributeLocation);
     // Bind the position buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
+    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.positionBuffer);
     // Setup a rectangle
     this.drawShape(gl);
-
     // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
     var size = 2;          // 2 components per iteration
     var type = gl.FLOAT;   // the data is 32bit floats
@@ -177,17 +231,18 @@ class App extends React.Component {
     var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
     var offset = 0;        // start at the beginning of the buffer
     gl.vertexAttribPointer(
-        positionLocation, size, type, normalize, stride, offset)
-
+        graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
     // Set the translation.
-    gl.uniform2fv(translationLocation, translation);
-
+    gl.uniform2fv(graphicContext.translationLocation, transformation.translation);
+    // Set the rotation.
+    var rotationAngleRadian = transformation.rotationAngle * Math.PI / 180;
+    gl.uniform2fv(graphicContext.rotationLocation, [Math.sin(rotationAngleRadian), Math.cos(rotationAngleRadian)]);
+    // Set the scale.
+    gl.uniform2fv(graphicContext.scaleLocation, [transformation.scaleX, transformation.scaleY]);
     // set the resolution
-    gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
-
+    gl.uniform2f(graphicContext.resolutionLocation, gl.canvas.width, gl.canvas.height);
     // set the color
-    gl.uniform4fv(colorLocation, color);
-
+    gl.uniform4fv(graphicContext.colorLocation, transformation.color);
     // Draw the rectangle.
     var primitiveType = gl.TRIANGLES;
     var count = 18;
@@ -199,6 +254,7 @@ class App extends React.Component {
     return Math.floor(Math.random() * range);
   }
 
+  //draw the shape
   drawShape(gl) {
     // NOTE: gl.bufferData(gl.ARRAY_BUFFER, ...) will affect
     // whatever buffer is bound to the `ARRAY_BUFFER` bind point
@@ -232,6 +288,77 @@ class App extends React.Component {
     ]), gl.STATIC_DRAW);
   }
 
+  //handle click on 'animate' button
+  handleAnimationClick() {
+    if(!this.state.animationContext.animationState){
+      var newTimer = setInterval(this.animate.bind(this), 25);
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          timer: newTimer,
+          animationState: true,
+        }
+      });
+    } else {
+      clearInterval(this.state.animationContext.timer);
+      this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          timer: null,
+          animationState: false,
+        }
+      });
+    }
+  }
+
+  //set the WebGL context: this is called when ReactJS initialize the view
+  setGlContext(glContext, width, height) {
+    var vertexShaderSource = VertexShader;
+    var fragmentShaderSource = FragmentShader;
+    var vertexShader = this.createShader(glContext, glContext.VERTEX_SHADER, vertexShaderSource);
+    var fragmentShader = this.createShader(glContext, glContext.FRAGMENT_SHADER, fragmentShaderSource);
+    var program = this.createProgram(glContext, vertexShader, fragmentShader);
+    var graphicContext = {...this.state.graphicContext}
+    graphicContext.glContext= glContext; 
+    graphicContext.width = width;
+    graphicContext.height = height;
+    graphicContext.program = program;
+    graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
+    graphicContext.translationLocation = glContext.getUniformLocation(program, "u_translation");
+    graphicContext.rotationLocation = glContext.getUniformLocation(program, "u_rotation");
+    graphicContext.scaleLocation = glContext.getUniformLocation(program, "u_scale");
+    graphicContext.resolutionLocation = glContext.getUniformLocation(program, "u_resolution");
+    graphicContext.colorLocation = glContext.getUniformLocation(program, "u_color");
+    graphicContext.positionBuffer = glContext.createBuffer();
+    this.setState({graphicContext})
+  }
+
+  //create a WebGL shader
+  createShader(gl, type, source) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (success) {
+      return shader;
+    }
+    console.log(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+  }
+
+  //create a WebGL program
+  createProgram(gl, vertexShader, fragmentShader) {
+    var program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (success) {
+      return program;
+    }
+    console.log(gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+  }
 }
 
 export default App;
