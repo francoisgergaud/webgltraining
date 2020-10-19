@@ -24,13 +24,10 @@ class WebGLCanvas extends React.Component {
   }
 
   componentDidMount() {
-    //var $canvas = $(ReactDOM.findDOMNode(this));
     this.canvas.current.height = this.canvas.current.parentElement.clientHeight;
     this.canvas.current.width = this.canvas.current.parentElement.clientWidth;
     var glContext = this.canvas.current.getContext("webgl");
     this.props.afterInit(glContext, this.canvas.current.width, this.canvas.current.height);
-    //this.props.canvasHeight = $this.height();
-    //this.props.canvasWidth = $this.width();
   }
 
 }

@@ -10,6 +10,7 @@ import VertexShader from './vertexShader.js';
 import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
+import {m3} from './matrix.js';
 
 class App extends React.Component {
 
@@ -39,7 +40,8 @@ class App extends React.Component {
       },
       transformation : {
         color: [Math.random(), Math.random(), Math.random(), 1],
-        translation: [0, 0],
+        translationX: 0, 
+        translationY: 0,
         rotationAngle: 0,
         scaleX: 1, 
         scaleY: 1,
@@ -166,14 +168,14 @@ class App extends React.Component {
 
   //animate bounce the shape against the borders
   animate() {
-    if(this.state.transformation.translation[0] > this.state.graphicContext.width){
+    if(this.state.transformation.translationX > this.state.graphicContext.width){
       this.setState({
         animationContext: {
           ...this.state.animationContext,
           translateDirectionX: false,
         }
       });
-    } else if (this.state.transformation.translation[0] < 0){
+    } else if (this.state.transformation.translationX < 0){
       this.setState({
         animationContext: {
           ...this.state.animationContext,
@@ -182,18 +184,18 @@ class App extends React.Component {
       });
     } 
     if(this.state.animationContext.translateDirectionX){
-      this.state.transformation.translation[0] += this.state.animationContext.translationOffsetX;
+      this.state.transformation.translationX += this.state.animationContext.translationOffsetX;
     } else {
-      this.state.transformation.translation[0] -= this.state.animationContext.translationOffsetX;
+      this.state.transformation.translationX -= this.state.animationContext.translationOffsetX;
     }
-    if(this.state.transformation.translation[1] > this.state.graphicContext.height){
+    if(this.state.transformation.translationY > this.state.graphicContext.height){
       this.setState({
         animationContext: {
           ...this.state.animationContext,
           translateDirectionY: false,
         }
       });
-    } else if (this.state.transformation.translation[1] < 0){
+    } else if (this.state.transformation.translationY < 0){
       this.setState({
         animationContext: {
           ...this.state.animationContext,
@@ -202,9 +204,9 @@ class App extends React.Component {
       });
     } 
     if(this.state.animationContext.translateDirectionY){
-      this.state.transformation.translation[1] += this.state.animationContext.translationOffsetY;
+      this.state.transformation.translationY += this.state.animationContext.translationOffsetY;
     } else {
-      this.state.transformation.translation[1] -= this.state.animationContext.translationOffsetY;
+      this.state.transformation.translationY -= this.state.animationContext.translationOffsetY;
     }
     this.drawScene(this.state.graphicContext, this.state.transformation);
   }
@@ -232,21 +234,19 @@ class App extends React.Component {
     var offset = 0;        // start at the beginning of the buffer
     gl.vertexAttribPointer(
         graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
-    // Set the translation.
-    gl.uniform2fv(graphicContext.translationLocation, transformation.translation);
-    // Set the rotation.
-    var rotationAngleRadian = transformation.rotationAngle * Math.PI / 180;
-    gl.uniform2fv(graphicContext.rotationLocation, [Math.sin(rotationAngleRadian), Math.cos(rotationAngleRadian)]);
-    // Set the scale.
-    gl.uniform2fv(graphicContext.scaleLocation, [transformation.scaleX, transformation.scaleY]);
-    // set the resolution
-    gl.uniform2f(graphicContext.resolutionLocation, gl.canvas.width, gl.canvas.height);
+    // Compute the matrix
+    var matrix = m3.projection(gl.canvas.width, gl.canvas.height);
+    matrix = m3.translate(matrix, transformation.translationX, transformation.translationY);
+    matrix = m3.rotate(matrix, transformation.rotationAngle * Math.PI / 180);
+    matrix = m3.scale(matrix, transformation.scaleX, transformation.scaleY);
+
+    // Set the matrix.
+    gl.uniformMatrix3fv(graphicContext.matrixLocation, false, matrix);
     // set the color
     gl.uniform4fv(graphicContext.colorLocation, transformation.color);
+   
     // Draw the rectangle.
-    var primitiveType = gl.TRIANGLES;
-    var count = 18;
-    gl.drawArrays(primitiveType, offset, count);
+    gl.drawArrays(gl.TRIANGLES, 0, 18);
   }
 
   // Returns a random integer from 0 to range - 1.
@@ -324,10 +324,7 @@ class App extends React.Component {
     graphicContext.height = height;
     graphicContext.program = program;
     graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
-    graphicContext.translationLocation = glContext.getUniformLocation(program, "u_translation");
-    graphicContext.rotationLocation = glContext.getUniformLocation(program, "u_rotation");
-    graphicContext.scaleLocation = glContext.getUniformLocation(program, "u_scale");
-    graphicContext.resolutionLocation = glContext.getUniformLocation(program, "u_resolution");
+    graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
     graphicContext.colorLocation = glContext.getUniformLocation(program, "u_color");
     graphicContext.positionBuffer = glContext.createBuffer();
     this.setState({graphicContext})
