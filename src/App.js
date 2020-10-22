@@ -10,7 +10,8 @@ import VertexShader from './vertexShader.js';
 import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
-import {m3} from './matrix.js';
+import {m4} from './matrix.js';
+import {model,colors} from './model.js';
 
 class App extends React.Component {
 
@@ -22,8 +23,13 @@ class App extends React.Component {
         animationState: false,
         translateDirectionX: true,
         translateDirectionY: true,
+        translateDirectionZ: true,
         translationOffsetX: 10,
         translationOffsetY: 10,
+        translationOffsetZ: 10,
+        rotationOffsetX: 0,
+        rotationOffsetY: 0,
+        rotationOffsetZ: 0,
         timer: null,
       },
       graphicContext: {
@@ -31,20 +37,26 @@ class App extends React.Component {
         program: null,
         width: 100,
         height: 30,
+        depth: 400,
         positionAttributeLocation: null,
         rotationLocation: null, 
         scaleLocation: null, 
         resolutionUniformLocation: null, 
         colorUniformLocation: null, 
-        positionBuffer: null, 
+        positionBuffer: null,
+        colorBuffer: null,
       },
       transformation : {
         color: [Math.random(), Math.random(), Math.random(), 1],
         translationX: 0, 
         translationY: 0,
-        rotationAngle: 0,
+        translationZ: 0,
+        rotationAngleX: 0,
+        rotationAngleY: 0,
+        rotationAngleZ: 0,
         scaleX: 1, 
         scaleY: 1,
+        scaleZ: 1,
       }
     };
   }
@@ -59,7 +71,7 @@ class App extends React.Component {
           </Col>
           <Col>
             <>
-              <div>{'translation offset x: ' + this.state.animationContext.translationOffsetX}</div>
+              <div>{'translation offset x: ' + this.state.animationContext.translationOffsetX + 'current x: ' + this.state.transformation.translationX }</div>
               <Slider
                 axis="x"
                 xstep={1}
@@ -79,7 +91,7 @@ class App extends React.Component {
               />
             </>
             <>
-              <div>{'translation offset y: ' + this.state.animationContext.translationOffsetY}</div>
+              <div>{'translation offset y: ' + this.state.animationContext.translationOffsetY + 'current y: ' + this.state.transformation.translationY }</div>
               <Slider
                 axis="x"
                 xstep={1}
@@ -92,6 +104,25 @@ class App extends React.Component {
                       animationContext: {
                         ...this.state.animationContext,
                         translationOffsetY: x,
+                      },
+                    });
+                  }}
+              />
+            </>
+            <>
+              <div>{'translation offset z: ' + this.state.animationContext.translationOffsetZ + 'current z: ' + this.state.transformation.translationZ }</div>
+              <Slider
+                axis="x"
+                xstep={1}
+                xmin={1}
+                xmax={20}
+                x={this.state.animationContext.translationOffsetZ}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      animationContext: {
+                        ...this.state.animationContext,
+                        translationOffsetZ: x,
                       },
                     });
                   }}
@@ -135,15 +166,56 @@ class App extends React.Component {
                   }}
               />
             </>
+            <>
+              <div>{'scaleZ: ' + this.state.transformation.scaleZ}</div>
+              <Slider
+                axis="x"
+                xstep={1}
+                xmin={1}
+                xmax={20}
+                x={this.state.transformation.scaleZ}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      transformation: {
+                        ...this.state.transformation,
+                        scaleZ: x,
+                      },
+                    });
+                  }}
+              />
+            </>
 
             <div>
-              rotation: 
+              rotation X: 
                 <div style={{display:'inline-block'}}>
                   <Knob 
-                    onChange={this.changeRotationValue.bind(this)}
+                    onChange={this.changeRotationValueX.bind(this)}
                     min={0} 
                     max={360} 
-                    value={this.state.transformation.rotationAngle}
+                    value={this.state.transformation.rotationOffsetX}
+                  />
+                </div>
+              </div>
+              <div>
+                rotation Y: 
+                <div style={{display:'inline-block'}}>
+                  <Knob 
+                    onChange={this.changeRotationValueY.bind(this)}
+                    min={0} 
+                    max={360} 
+                    value={this.state.transformation.rotationOffsetY}
+                  />
+                </div>
+              </div>
+              <div>
+                rotation Z: 
+                <div style={{display:'inline-block'}}>
+                  <Knob 
+                    onChange={this.changeRotationValueZ.bind(this)}
+                    min={0} 
+                    max={360} 
+                    value={this.state.transformation.rotationOffsetZ}
                   />
                 </div>
               </div>
@@ -156,58 +228,95 @@ class App extends React.Component {
     );
   }
 
-  //handler for rotation value change
-  changeRotationValue(rotationAngleDegree) {
+  //handler for rotationX value change
+  changeRotationValueX(rotationAngleDegree) {
     this.setState({
-      transformation: {
-        ...this.state.transformation,
-        rotationAngle: rotationAngleDegree,
+      animationContext: {
+        ...this.state.animationContext,
+        rotationOffsetX: rotationAngleDegree,
+      },
+    });
+  }
+
+  //handler for rotationY value change
+  changeRotationValueY(rotationAngleDegree) {
+    this.setState({
+      animationContext: {
+        ...this.state.animationContext,
+        rotationOffsetY: rotationAngleDegree,
+      },
+    });
+  }
+
+  //handler for rotationZ value change
+  changeRotationValueZ(rotationAngleDegree) {
+    this.setState({
+      animationContext: {
+        ...this.state.animationContext,
+        rotationOffsetZ: rotationAngleDegree,
       },
     });
   }
 
   //animate bounce the shape against the borders
   animate() {
-    if(this.state.transformation.translationX > this.state.graphicContext.width){
-      this.setState({
-        animationContext: {
-          ...this.state.animationContext,
-          translateDirectionX: false,
-        }
-      });
-    } else if (this.state.transformation.translationX < 0){
-      this.setState({
-        animationContext: {
-          ...this.state.animationContext,
-          translateDirectionX: true,
-        }
-      });
+    var translateDirectionX = this.state.animationContext.translateDirectionX;
+    var translationX = this.state.transformation.translationX;
+    if(translationX > this.state.graphicContext.width){
+      translateDirectionX= false;
+    } else if (translationX < 0){
+      translateDirectionX= true;
     } 
-    if(this.state.animationContext.translateDirectionX){
-      this.state.transformation.translationX += this.state.animationContext.translationOffsetX;
+    if(translateDirectionX){
+      translationX += this.state.animationContext.translationOffsetX;
     } else {
-      this.state.transformation.translationX -= this.state.animationContext.translationOffsetX;
+      translationX -= this.state.animationContext.translationOffsetX;
     }
-    if(this.state.transformation.translationY > this.state.graphicContext.height){
-      this.setState({
-        animationContext: {
-          ...this.state.animationContext,
-          translateDirectionY: false,
-        }
-      });
-    } else if (this.state.transformation.translationY < 0){
-      this.setState({
-        animationContext: {
-          ...this.state.animationContext,
-          translateDirectionY: true,
-        }
-      });
+    var translateDirectionY = this.state.animationContext.translateDirectionY;
+    var translationY = this.state.transformation.translationY;
+    if(translationY > this.state.graphicContext.height){
+      translateDirectionY= false;
+    } else if (translationY < 0){
+      translateDirectionY= true;
     } 
-    if(this.state.animationContext.translateDirectionY){
-      this.state.transformation.translationY += this.state.animationContext.translationOffsetY;
+    if(translateDirectionY){
+      translationY += this.state.animationContext.translationOffsetY;
     } else {
-      this.state.transformation.translationY -= this.state.animationContext.translationOffsetY;
+      translationY -= this.state.animationContext.translationOffsetY;
     }
+    var translateDirectionZ = this.state.animationContext.translateDirectionZ;
+    var translationZ = this.state.transformation.translationZ;
+    if(translationZ > this.state.graphicContext.depth / 2){
+      translateDirectionZ= false;
+    } else if (translationZ < -this.state.graphicContext.depth / 2){
+      translateDirectionZ= true;
+    } 
+    if(translateDirectionZ){
+      translationZ += this.state.animationContext.translationOffsetZ;
+    } else {
+      translationZ -= this.state.animationContext.translationOffsetZ;
+    }
+    var rotationAngleX = this.state.transformation.rotationAngleX + this.state.animationContext.rotationOffsetX;
+    var rotationAngleY = this.state.transformation.rotationAngleY + this.state.animationContext.rotationOffsetY;
+    var rotationAngleZ = this.state.transformation.rotationAngleZ + this.state.animationContext.rotationOffsetZ;
+
+    this.setState({
+        animationContext: {
+          ...this.state.animationContext,
+          translateDirectionX: translateDirectionX,
+          translateDirectionY: translateDirectionY,
+          translateDirectionZ: translateDirectionZ,
+        },
+        transformation: {
+          ...this.state.transformation,
+          translationX: translationX,
+          translationY: translationY,
+          translationZ: translationZ,
+          rotationAngleX: rotationAngleX,
+          rotationAngleY: rotationAngleY,
+          rotationAngleZ: rotationAngleZ,
+        },
+      });
     this.drawScene(this.state.graphicContext, this.state.transformation);
   }
 
@@ -215,9 +324,9 @@ class App extends React.Component {
   drawScene(graphicContext, transformation) {
     var gl = graphicContext.glContext;
     // Tell WebGL how to convert from clip space to pixels
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    // Clear the canvas.
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.viewport(0, 0, graphicContext.width, graphicContext.height);
+    // Clear the canvas AND the depth buffer.
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // Tell it to use our program (pair of shaders)
     gl.useProgram(graphicContext.program);
     // Turn on the attribute
@@ -227,26 +336,50 @@ class App extends React.Component {
     // Setup a rectangle
     this.drawShape(gl);
     // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
+    var size = 3;          // 2 components per iteration
     var type = gl.FLOAT;   // the data is 32bit floats
     var normalize = false; // don't normalize the data
     var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
     var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(
-        graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
-    // Compute the matrix
-    var matrix = m3.projection(gl.canvas.width, gl.canvas.height);
-    matrix = m3.translate(matrix, transformation.translationX, transformation.translationY);
-    matrix = m3.rotate(matrix, transformation.rotationAngle * Math.PI / 180);
-    matrix = m3.scale(matrix, transformation.scaleX, transformation.scaleY);
+    gl.vertexAttribPointer(graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
+    
+    // Turn on the color attribute
+    gl.enableVertexAttribArray(graphicContext.colorLocation);
+    // Bind the color buffer.
+    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.colorBuffer);
+    //set the colors
+    this.setColors(gl);
+    // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
+    var size = 3;                 // 3 components per iteration
+    var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+    var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+    var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+    var offset = 0;               // start at the beginning of the buffer
+    gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset)
 
+    // Compute the matrix
+    var left = 0;
+    var right = graphicContext.width;
+    var bottom = graphicContext.height;
+    var top = 0;
+    var near = graphicContext.depth;
+    var far = -graphicContext.depth;
+    var matrix = m4.orthographic(left, right, bottom, top, near, far);
+    //var matrix = m4.projection(graphicContext.width, graphicContext.height, graphicContext.depth);
+    matrix = m4.translate(matrix, transformation.translationX, transformation.translationY, transformation.translationZ);
+    matrix = m4.xRotate(matrix, transformation.rotationAngleX * Math.PI / 180);
+    matrix = m4.yRotate(matrix, transformation.rotationAngleY * Math.PI / 180);
+    matrix = m4.zRotate(matrix, transformation.rotationAngleZ * Math.PI / 180);
+    matrix = m4.scale(matrix, transformation.scaleX, transformation.scaleY, transformation.scaleZ);
+   
     // Set the matrix.
-    gl.uniformMatrix3fv(graphicContext.matrixLocation, false, matrix);
+    gl.uniformMatrix4fv(graphicContext.matrixLocation, false, matrix);
+
     // set the color
-    gl.uniform4fv(graphicContext.colorLocation, transformation.color);
+    //gl.uniform4fv(graphicContext.colorLocation, transformation.color);
    
     // Draw the rectangle.
-    gl.drawArrays(gl.TRIANGLES, 0, 18);
+    gl.drawArrays(gl.TRIANGLES, 0, model.length/3);
   }
 
   // Returns a random integer from 0 to range - 1.
@@ -260,32 +393,12 @@ class App extends React.Component {
     // whatever buffer is bound to the `ARRAY_BUFFER` bind point
     // but so far we only have one buffer. If we had more than one
     // buffer we'd want to bind that buffer to `ARRAY_BUFFER` first.
+    gl.bufferData(gl.ARRAY_BUFFER, model, gl.STATIC_DRAW);
+  }
 
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      // left column
-      0, 0,
-      30, 0,
-      0, 150,
-      0, 150,
-      30, 0,
-      30, 150,
-
-      // top rung
-      30, 0,
-      100, 0,
-      30, 30,
-      30, 30,
-      100, 0,
-      100, 30,
-
-      // middle rung
-      30, 60,
-      67, 60,
-      30, 90,
-      30, 90,
-      67, 60,
-      67, 90,
-    ]), gl.STATIC_DRAW);
+  // Fill the buffer with colors for the 'F'.
+  setColors(gl) {
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
   }
 
   //handle click on 'animate' button
@@ -325,9 +438,17 @@ class App extends React.Component {
     graphicContext.program = program;
     graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
     graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
-    graphicContext.colorLocation = glContext.getUniformLocation(program, "u_color");
+    graphicContext.colorLocation = glContext.getAttribLocation(program, "a_color");
+    // Bind the position buffer.
     graphicContext.positionBuffer = glContext.createBuffer();
-    this.setState({graphicContext})
+    // Create a buffer for colors.
+    graphicContext.colorBuffer = glContext.createBuffer();
+    glContext.enable(glContext.CULL_FACE);
+    glContext.enable(glContext.DEPTH_TEST);
+    this.setState({
+      graphicContext : graphicContext
+    });
+    
   }
 
   //create a WebGL shader
@@ -356,6 +477,9 @@ class App extends React.Component {
     console.log(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
   }
+
+
+
 }
 
 export default App;
