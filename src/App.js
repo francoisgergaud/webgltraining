@@ -57,7 +57,10 @@ class App extends React.Component {
         scaleX: 1, 
         scaleY: 1,
         scaleZ: 1,
-      }
+      },
+      camera : {
+        fieldOfViewDegree:60,
+      },
     };
   }
 
@@ -222,6 +225,26 @@ class App extends React.Component {
             <div>
               <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
             </div>
+            <>
+              <div>{'fieldOfViewDegree: ' + this.state.camera.fieldOfViewDegree }</div>
+              <Slider
+                axis="x"
+                xstep={1}
+                xmin={30}
+                xmax={180}
+                x={this.state.camera.fieldOfViewDegree}
+                onChange={
+                  ({ x }) => {
+                    this.setState({
+                      camera: {
+                        ...this.state.camera,
+                        fieldOfViewDegree: x,
+                      },
+                    });
+                  }
+                }
+              />
+            </>
           </Col>
         </Row>
       </Container>
@@ -364,7 +387,17 @@ class App extends React.Component {
     var top = 0;
     var near = graphicContext.depth;
     var far = -graphicContext.depth;
-    var matrix = m4.orthographic(left, right, bottom, top, near, far);
+
+
+    var aspect = graphicContext.width / graphicContext.height;
+    var zNear = 1;
+    var zFar = 2000;
+    var matrix = m4.perspective(this.state.camera.fieldOfViewDegree * Math.PI / 180, aspect, zNear, zFar);
+    // move the object in front of the frustrum
+    matrix = m4.translate(matrix,-150, 0, -360);
+    //var matrix = m4.makeZToWMatrix(this.state.camera.fudgeFactor);
+    //matrix = m4.multiply(matrix, m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400));
+    //var matrix = m4.orthographic(left, right, bottom, top, near, far);
     //var matrix = m4.projection(graphicContext.width, graphicContext.height, graphicContext.depth);
     matrix = m4.translate(matrix, transformation.translationX, transformation.translationY, transformation.translationZ);
     matrix = m4.xRotate(matrix, transformation.rotationAngleX * Math.PI / 180);
