@@ -60,6 +60,7 @@ class App extends React.Component {
       },
       camera : {
         fieldOfViewDegree:60,
+        angleDegree: 0,
       },
     };
   }
@@ -323,6 +324,7 @@ class App extends React.Component {
     var rotationAngleY = this.state.transformation.rotationAngleY + this.state.animationContext.rotationOffsetY;
     var rotationAngleZ = this.state.transformation.rotationAngleZ + this.state.animationContext.rotationOffsetZ;
 
+    var cameraAngleDegree = (this.state.camera.angleDegree + 5) % 360
     this.setState({
         animationContext: {
           ...this.state.animationContext,
@@ -339,6 +341,10 @@ class App extends React.Component {
           rotationAngleY: rotationAngleY,
           rotationAngleZ: rotationAngleZ,
         },
+        camera: {
+          ...this.state.camera,
+          angleDegree: cameraAngleDegree,
+        }
       });
     this.drawScene(this.state.graphicContext, this.state.transformation);
   }
@@ -350,14 +356,15 @@ class App extends React.Component {
     gl.viewport(0, 0, graphicContext.width, graphicContext.height);
     // Clear the canvas AND the depth buffer.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
     // Tell it to use our program (pair of shaders)
     gl.useProgram(graphicContext.program);
+    
     // Turn on the attribute
     gl.enableVertexAttribArray(graphicContext.positionAttributeLocation);
     // Bind the position buffer.
     gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.positionBuffer);
-    // Setup a rectangle
-    this.drawShape(gl);
     // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
     var size = 3;          // 2 components per iteration
     var type = gl.FLOAT;   // the data is 32bit floats
@@ -370,49 +377,89 @@ class App extends React.Component {
     gl.enableVertexAttribArray(graphicContext.colorLocation);
     // Bind the color buffer.
     gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.colorBuffer);
-    //set the colors
-    this.setColors(gl);
     // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
     var size = 3;                 // 3 components per iteration
     var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
     var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
     var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
     var offset = 0;               // start at the beginning of the buffer
-    gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset)
-
-    // Compute the matrix
-    var left = 0;
-    var right = graphicContext.width;
-    var bottom = graphicContext.height;
-    var top = 0;
-    var near = graphicContext.depth;
-    var far = -graphicContext.depth;
-
+    gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset);
 
     var aspect = graphicContext.width / graphicContext.height;
     var zNear = 1;
     var zFar = 2000;
-    var matrix = m4.perspective(this.state.camera.fieldOfViewDegree * Math.PI / 180, aspect, zNear, zFar);
+    var projectionMatrix = m4.perspective(this.state.camera.fieldOfViewDegree * Math.PI / 180, aspect, zNear, zFar);
+
+    var numFs = 5;
+    var radius = 200;
+
+    // Compute the position of the first F
+    var fPosition = [transformation.translationX, transformation.translationY, transformation.translationZ];
+     
+    // Compute a matrix for the camera
+    var cameraMatrix = m4.yRotation(this.state.camera.angleDegree * Math.PI / 180);
+    cameraMatrix = m4.translate(cameraMatrix, 0, 0, radius * 1.5);
+
+    // Get the camera's position from the matrix we computed
+    var cameraPosition = [
+      cameraMatrix[12],
+      cameraMatrix[13],
+      cameraMatrix[14],
+    ];
+
+    var up = [0, 1, 0];
+
+    // Compute the camera's matrix using look at.
+    var cameraMatrix = m4.lookAt(cameraPosition, fPosition, up);
+    // Make a view matrix from the camera matrix.
+    var viewMatrix = m4.inverse(cameraMatrix);
+    // Compute a view projection matrix
+    var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+
+    for (var ii = 0; ii < numFs; ++ii) {
+      var angle = ii * Math.PI * 2 / numFs;
+      var x = Math.cos(angle) * radius;
+      var y = Math.sin(angle) * radius;
+     
+      // starting with the view projection matrix
+      // compute a matrix for the F
+      var matrix = m4.translate(viewProjectionMatrix, x, 0, y);
+
+      //test to remove
+      matrix = m4.translate(matrix, transformation.translationX, transformation.translationY, transformation.translationZ);
+      matrix = m4.xRotate(matrix, transformation.rotationAngleX * Math.PI / 180);
+      matrix = m4.yRotate(matrix, transformation.rotationAngleY * Math.PI / 180);
+      matrix = m4.zRotate(matrix, transformation.rotationAngleZ * Math.PI / 180);
+      matrix = m4.scale(matrix, transformation.scaleX, transformation.scaleY, transformation.scaleZ);
+     
+      // Set the matrix.
+      gl.uniformMatrix4fv(graphicContext.matrixLocation, false, matrix);
+     
+      // Draw the geometry.
+      gl.drawArrays(gl.TRIANGLES, 0, model.length/3);
+    }
+
+    //var matrix = m4.perspective(this.state.camera.fieldOfViewDegree * Math.PI / 180, aspect, zNear, zFar);
     // move the object in front of the frustrum
-    matrix = m4.translate(matrix,-150, 0, -360);
+    //matrix = m4.translate(matrix,-150, 0, -360);
     //var matrix = m4.makeZToWMatrix(this.state.camera.fudgeFactor);
     //matrix = m4.multiply(matrix, m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400));
     //var matrix = m4.orthographic(left, right, bottom, top, near, far);
     //var matrix = m4.projection(graphicContext.width, graphicContext.height, graphicContext.depth);
-    matrix = m4.translate(matrix, transformation.translationX, transformation.translationY, transformation.translationZ);
-    matrix = m4.xRotate(matrix, transformation.rotationAngleX * Math.PI / 180);
-    matrix = m4.yRotate(matrix, transformation.rotationAngleY * Math.PI / 180);
-    matrix = m4.zRotate(matrix, transformation.rotationAngleZ * Math.PI / 180);
-    matrix = m4.scale(matrix, transformation.scaleX, transformation.scaleY, transformation.scaleZ);
+    // matrix = m4.translate(matrix, transformation.translationX, transformation.translationY, transformation.translationZ);
+    // matrix = m4.xRotate(matrix, transformation.rotationAngleX * Math.PI / 180);
+    // matrix = m4.yRotate(matrix, transformation.rotationAngleY * Math.PI / 180);
+    // matrix = m4.zRotate(matrix, transformation.rotationAngleZ * Math.PI / 180);
+    //matrix = m4.scale(matrix, transformation.scaleX, transformation.scaleY, transformation.scaleZ);
    
     // Set the matrix.
-    gl.uniformMatrix4fv(graphicContext.matrixLocation, false, matrix);
+    //gl.uniformMatrix4fv(graphicContext.matrixLocation, false, matrix);
 
     // set the color
     //gl.uniform4fv(graphicContext.colorLocation, transformation.color);
    
     // Draw the rectangle.
-    gl.drawArrays(gl.TRIANGLES, 0, model.length/3);
+    //gl.drawArrays(gl.TRIANGLES, 0, model.length/3);
   }
 
   // Returns a random integer from 0 to range - 1.
@@ -421,16 +468,29 @@ class App extends React.Component {
   }
 
   //draw the shape
-  drawShape(gl) {
+  setGeometry(gl, positionBuffer) {
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     // NOTE: gl.bufferData(gl.ARRAY_BUFFER, ...) will affect
     // whatever buffer is bound to the `ARRAY_BUFFER` bind point
     // but so far we only have one buffer. If we had more than one
     // buffer we'd want to bind that buffer to `ARRAY_BUFFER` first.
+    var matrix = m4.xRotation(Math.PI);
+    matrix = m4.translate(matrix, -50, -75, -15);
+
+    for (var ii = 0; ii < model.length; ii += 3) {
+      var vector = m4.vectorMultiply([model[ii + 0], model[ii + 1], model[ii + 2], 1], matrix);
+      model[ii + 0] = vector[0];
+      model[ii + 1] = vector[1];
+      model[ii + 2] = vector[2];
+    }
     gl.bufferData(gl.ARRAY_BUFFER, model, gl.STATIC_DRAW);
   }
 
   // Fill the buffer with colors for the 'F'.
-  setColors(gl) {
+  setColors(gl, colorBuffer) {
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
   }
 
@@ -472,12 +532,14 @@ class App extends React.Component {
     graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
     graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
     graphicContext.colorLocation = glContext.getAttribLocation(program, "a_color");
-    // Bind the position buffer.
+    // create the position buffer.
     graphicContext.positionBuffer = glContext.createBuffer();
-    // Create a buffer for colors.
+    // Put geometry data into buffer
+    this.setGeometry(glContext, graphicContext.positionBuffer);
+    // Create a buffer to put colors in
     graphicContext.colorBuffer = glContext.createBuffer();
-    glContext.enable(glContext.CULL_FACE);
-    glContext.enable(glContext.DEPTH_TEST);
+    // Put geometry data into buffer
+    this.setColors(glContext, graphicContext.colorBuffer);
     this.setState({
       graphicContext : graphicContext
     });
