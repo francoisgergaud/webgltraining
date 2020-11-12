@@ -1,3 +1,52 @@
+export class animatedModel {
+
+  constructor(id, vertexes, colors, width, height, depth){
+    this.id = id;
+    this.vertex = model;
+    this.colors = colors;
+
+    this.position = {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+    this.rotation = {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+    this.scale = {
+      x: 1,
+      y: 1,
+      z: 1,
+    };
+    this.animationParameters = {
+      translate: {
+        xDirection: true,
+        yDirection: true,
+        zDirection: true,
+        xOffset: 10,
+        yOffset: 10,
+        zOffset: 10,
+      },
+      rotate: {
+        x: 180,
+        y: 0,
+        z: 0,
+      },
+      width: width,
+      height: height,
+      depth: depth,
+    }
+  }
+
+  animate(deltaTimeSecond){
+    this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
+    this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;
+    this.rotation.z += this.animationParameters.rotate.z * deltaTimeSecond;
+  }
+}
+
 //contains array of coordinate which define the vertices of a model
 export const model = new Float32Array([
           // left column front
@@ -256,3 +305,4 @@ export const colors = new Uint8Array([
         160, 160, 220,
         160, 160, 220,
         160, 160, 220]);
+
