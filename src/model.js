@@ -1,9 +1,10 @@
 export class animatedModel {
 
-  constructor(id, vertexes, colors, width, height, depth){
+  constructor(id, vertexes, colors, textureCoordinates, width, height, depth){
     this.id = id;
     this.vertex = model;
     this.colors = colors;
+    this.textureCoordinates = textureCoordinates;
 
     this.position = {
       x: 0,
@@ -306,3 +307,132 @@ export const colors = new Uint8Array([
         160, 160, 220,
         160, 160, 220]);
 
+export const textureCoordinates =
+      new Float32Array([
+        // left column front
+         38 / 255,  44 / 255,
+         38 / 255, 223 / 255,
+        113 / 255,  44 / 255,
+         38 / 255, 223 / 255,
+        113 / 255, 223 / 255,
+        113 / 255,  44 / 255,
+
+        // top rung front
+        113 / 255, 44 / 255,
+        113 / 255, 85 / 255,
+        218 / 255, 44 / 255,
+        113 / 255, 85 / 255,
+        218 / 255, 85 / 255,
+        218 / 255, 44 / 255,
+
+        // middle rung front
+        113 / 255, 112 / 255,
+        113 / 255, 151 / 255,
+        203 / 255, 112 / 255,
+        113 / 255, 151 / 255,
+        203 / 255, 151 / 255,
+        203 / 255, 112 / 255,
+
+        // left column back
+         38 / 255,  44 / 255,
+        113 / 255,  44 / 255,
+         38 / 255, 223 / 255,
+         38 / 255, 223 / 255,
+        113 / 255,  44 / 255,
+        113 / 255, 223 / 255,
+
+        // top rung back
+        113 / 255, 44 / 255,
+        218 / 255, 44 / 255,
+        113 / 255, 85 / 255,
+        113 / 255, 85 / 255,
+        218 / 255, 44 / 255,
+        218 / 255, 85 / 255,
+
+        // middle rung back
+        113 / 255, 112 / 255,
+        203 / 255, 112 / 255,
+        113 / 255, 151 / 255,
+        113 / 255, 151 / 255,
+        203 / 255, 112 / 255,
+        203 / 255, 151 / 255,
+
+        // top
+        0, 0,
+        1, 0,
+        1, 1,
+        0, 0,
+        1, 1,
+        0, 1,
+
+        // top rung right
+        0, 0,
+        1, 0,
+        1, 1,
+        0, 0,
+        1, 1,
+        0, 1,
+
+        // under top rung
+        0, 0,
+        0, 1,
+        1, 1,
+        0, 0,
+        1, 1,
+        1, 0,
+
+        // between top rung and middle
+        0, 0,
+        1, 1,
+        0, 1,
+        0, 0,
+        1, 0,
+        1, 1,
+
+        // top of middle rung
+        0, 0,
+        1, 1,
+        0, 1,
+        0, 0,
+        1, 0,
+        1, 1,
+
+        // right of middle rung
+        0, 0,
+        1, 1,
+        0, 1,
+        0, 0,
+        1, 0,
+        1, 1,
+
+        // bottom of middle rung.
+        0, 0,
+        0, 1,
+        1, 1,
+        0, 0,
+        1, 1,
+        1, 0,
+
+        // right of bottom
+        0, 0,
+        1, 1,
+        0, 1,
+        0, 0,
+        1, 0,
+        1, 1,
+
+        // bottom
+        0, 0,
+        0, 1,
+        1, 1,
+        0, 0,
+        1, 1,
+        1, 0,
+
+        // left side
+        0, 0,
+        0, 1,
+        1, 1,
+        0, 0,
+        1, 1,
+        1, 0,]);

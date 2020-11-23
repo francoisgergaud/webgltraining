@@ -1,16 +1,16 @@
 export default `
 	// an attribute will receive data from a buffer
 	attribute vec4 a_position;
-	attribute vec4 a_color;
+	attribute vec2 a_texcoord;
 
 	uniform mat4 u_matrix;
 
-	varying vec4 v_color;
+	varying vec2 v_texcoord;
 	
 	void main() {
 		gl_Position = u_matrix * a_position;
 		
-		// Pass the color to the fragment shader.
-  		v_color = a_color;
+		// Pass the texcoord to the fragment shader.
+  		v_texcoord = a_texcoord;
 	}
 `;

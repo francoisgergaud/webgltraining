@@ -12,7 +12,7 @@ import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
 import {m4} from './matrix.js';
-import {animatedModel,model,colors} from './model.js';
+import {animatedModel, model, colors, textureCoordinates} from './model.js';
 
 class App extends React.Component {
 
@@ -22,8 +22,8 @@ class App extends React.Component {
     var width= 100;
     var height= 30;
     var depth= 400;
-    var animatedElement1 = new animatedModel('id1', model, colors, width, height, depth);
-    var animatedElement2 = new animatedModel('id2', model, colors, width, height, depth);
+    var animatedElement1 = new animatedModel('id1', model, colors, textureCoordinates, width, height, depth);
+    var animatedElement2 = new animatedModel('id2', model, colors, textureCoordinates, width, height, depth);
     this.state = {
       animationContext: {
         rafValue: 0,
@@ -138,16 +138,22 @@ class App extends React.Component {
     gl.vertexAttribPointer(graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
     
     // Turn on the color attribute
-    gl.enableVertexAttribArray(graphicContext.colorLocation);
+    gl.enableVertexAttribArray(graphicContext.texcoordLocation);
     // Bind the color buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.colorBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.textureBuffer);
     // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
-    size = 3;                 // 3 components per iteration
-    type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
-    normalize = true;         // normalize the data (convert from 0-255 to 0-1)
-    stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
-    offset = 0;               // start at the beginning of the buffer
-    gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset);
+    // size = 3;                 // 3 components per iteration
+    // type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+    // normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+    // stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+    // offset = 0;               // start at the beginning of the buffer
+    // gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset);
+    size = 2;
+    type = gl.FLOAT;
+    normalize = false;
+    stride = 0;
+    offset = 0;
+    gl.vertexAttribPointer(graphicContext.texcoordLocation, size, type, normalize, stride, offset);
 
     var aspect = graphicContext.width / graphicContext.height;
     var zNear = 1;
@@ -208,6 +214,12 @@ class App extends React.Component {
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
   }
 
+  setTexcoords(gl, textureBuffer) {
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
+  }
+
   //handle click on 'animate' button
   handleAnimationClick() {
     requestAnimationFrame(this.animate.bind(this));
@@ -234,15 +246,31 @@ class App extends React.Component {
     graphicContext.program = program;
     graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
     graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
-    graphicContext.colorLocation = glContext.getAttribLocation(program, "a_color");
+    graphicContext.texcoordLocation = glContext.getAttribLocation(program, "a_texcoord");
     // create the position buffer.
     graphicContext.positionBuffer = glContext.createBuffer();
     // Put geometry data into buffer
     this.setGeometry(glContext, graphicContext.positionBuffer);
-    // Create a buffer to put colors in
-    graphicContext.colorBuffer = glContext.createBuffer();
-    // Put geometry data into buffer
-    this.setColors(glContext, graphicContext.colorBuffer);
+    // Create a texture.
+    var texture = glContext.createTexture();
+    glContext.bindTexture(glContext.TEXTURE_2D, texture);
+    // Fill the texture with a 1x1 blue pixel.
+    glContext.texImage2D(glContext.TEXTURE_2D, 0, glContext.RGBA, 1, 1, 0, glContext.RGBA, glContext.UNSIGNED_BYTE,
+                  new Uint8Array([0, 0, 255, 255]));
+     
+    // Asynchronously load an image
+    var image = new Image();
+    image.src = "f-texture.png";
+    image.addEventListener('load', function() {
+      // Now that the image has loaded make copy it to the texture.
+      glContext.bindTexture(glContext.TEXTURE_2D, texture);
+      glContext.texImage2D(glContext.TEXTURE_2D, 0, glContext.RGBA, glContext.RGBA,glContext.UNSIGNED_BYTE, image);
+      glContext.generateMipmap(glContext.TEXTURE_2D);
+    });
+    // Create a buffer to put texture coordinate in
+    graphicContext.textureBuffer = glContext.createBuffer();
+    // Put texture coordinate data into buffer
+    this.setTexcoords(glContext, graphicContext.textureBuffer);
     this.setState({
       graphicContext : graphicContext
     });
