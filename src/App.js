@@ -11,7 +11,6 @@ import VertexShader from './vertexShader.js';
 import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
-import {m4} from './utils/matrix.js';
 import {webGLUtils} from './utils/webGLUtils.js';
 import {lookAtCamera} from './utils/camera.js';
 import {animatedModel, model, colors, textureCoordinates} from './model.js';
@@ -24,8 +23,6 @@ class App extends React.Component {
     var width= 100;
     var height= 30;
     var depth= 400;
-    var animatedElement1 = new animatedModel('id1', model, colors, textureCoordinates, width, height, depth);
-    var animatedElement2 = new animatedModel('id2', model, colors, textureCoordinates, width, height, depth);
     this.state = {
       animationContext: {
         rafValue: 0,
@@ -33,11 +30,11 @@ class App extends React.Component {
       graphicContext: {
         glContext: null,
         program: null,
-        width: 100,
-        height: 30,
-        depth: 400,
+        width: width,
+        height: height,
+        depth: depth,
       },
-      models : {'id1': animatedElement1, 'id2': animatedElement2},
+      models : {},
       selectedModel : 'id1',
       camera : null,
     };
@@ -69,114 +66,6 @@ class App extends React.Component {
     );
   }
 
-  
-
-  //animate bounce the shape against the borders
-  animate(now) {
-    now *= 0.001;
-    // Subtract the previous time from the current time
-    var deltaTime = now - this.state.animationContext.rafValue;
-    // Remember the current time for the next frame.
-    this.state.animationContext.rafValue = now;
-    Object.keys(this.state.models).forEach(
-      modelId => this.state.models[modelId].animate(deltaTime)
-    );
-    this.drawScene(this.state.graphicContext, this.state.models, this.state.models[this.state.selectedModel]);
-    requestAnimationFrame(this.animate.bind(this));
-  }
-
-  // Draw a the scene.
-  drawScene(graphicContext, models, selectedModel) {
-    var gl = graphicContext.glContext;
-    // Tell WebGL how to convert from clip space to pixels
-    gl.viewport(0, 0, graphicContext.width, graphicContext.height);
-    // Clear the canvas AND the depth buffer.
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.CULL_FACE);
-    gl.enable(gl.DEPTH_TEST);
-    // Tell it to use our program (pair of shaders)
-    gl.useProgram(graphicContext.program);
-    
-    var glAttributes = {
-      a_position : {
-        location: graphicContext.positionAttributeLocation, 
-        buffer: graphicContext.positionBuffer, 
-        size: 3, 
-        type: gl.FLOAT,
-        normalize: false,
-        stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
-        offset: 0,
-      },
-      a_texcoord: {
-        location: graphicContext.texcoordLocation, 
-        buffer: graphicContext.textureBuffer, 
-        size: 2, 
-        type: gl.FLOAT,
-        normalize: false,
-        stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
-        offset: 0,
-      },
-    };
-    webGLUtils.setAttributes(gl, glAttributes);
-
-    var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
-    this.state.camera.setTarget(cameraTarget);
-    var viewProjectionMatrix = this.state.camera.getViewProjectionMatrix();
-
-    Object.keys(models).forEach( modelId => {
-      var model = models[modelId];
-      //test to remove
-      var matrix = m4.translate(viewProjectionMatrix, model.position.x, model.position.y, model.position.z);
-      matrix = m4.xRotate(matrix, model.rotation.x * Math.PI / 180);
-      matrix = m4.yRotate(matrix, model.rotation.y * Math.PI / 180);
-      matrix = m4.zRotate(matrix, model.rotation.z * Math.PI / 180);
-      matrix = m4.scale(matrix, model.scale.x, model.scale.y, model.scale.z);
-     
-      // Set the matrix.
-      gl.uniformMatrix4fv(graphicContext.matrixLocation, false, matrix);
-     
-      // Draw the geometry.
-      gl.drawArrays(gl.TRIANGLES, 0, model.vertex.length/3);
-    });
-  }
-
-  // Returns a random integer from 0 to range - 1.
-  randomInt(range) {
-    return Math.floor(Math.random() * range);
-  }
-
-  //draw the shape
-  setGeometry(gl, positionBuffer) {
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, model, gl.STATIC_DRAW);
-  }
-
-  // Fill the buffer with colors for the 'F'.
-  setColors(gl, colorBuffer) {
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-  }
-
-  setTexcoords(gl, textureBuffer) {
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
-  }
-
-  //handle click on 'animate' button
-  handleAnimationClick() {
-    requestAnimationFrame(this.animate.bind(this));
-  }
-
-  selectModel(event){
-    this.setState({
-      ...this.state,
-      selectedModel: event.target.value,
-    });
-  }
-
   //set the WebGL context: this is called when ReactJS initialize the view
   setGlContext(glContext, width, height) {
     var vertexShaderSource = VertexShader;
@@ -192,37 +81,106 @@ class App extends React.Component {
     graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
     graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
     graphicContext.texcoordLocation = glContext.getAttribLocation(program, "a_texcoord");
-    // create the position buffer.
-    graphicContext.positionBuffer = glContext.createBuffer();
-    // Put geometry data into buffer
-    this.setGeometry(glContext, graphicContext.positionBuffer);
-    // Create a texture.
-    var texture = glContext.createTexture();
-    glContext.bindTexture(glContext.TEXTURE_2D, texture);
-    // Fill the texture with a 1x1 blue pixel.
-    glContext.texImage2D(glContext.TEXTURE_2D, 0, glContext.RGBA, 1, 1, 0, glContext.RGBA, glContext.UNSIGNED_BYTE,
-                  new Uint8Array([0, 0, 255, 255]));
+
+    //initialize the scene
+    var animatedElement1 = new animatedModel('id1', glContext, model, colors, textureCoordinates);
+    var animatedElement2 = new animatedModel('id2', glContext, model, colors, textureCoordinates);
      
-    // Asynchronously load an image
+    // Asynchronously load an image for texture
     var image = new Image();
     image.src = "f-texture.png";
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
-      glContext.bindTexture(glContext.TEXTURE_2D, texture);
-      glContext.texImage2D(glContext.TEXTURE_2D, 0, glContext.RGBA, glContext.RGBA,glContext.UNSIGNED_BYTE, image);
-      glContext.generateMipmap(glContext.TEXTURE_2D);
+      animatedElement1.image = image;
     });
-    // Create a buffer to put texture coordinate in
-    graphicContext.textureBuffer = glContext.createBuffer();
-    // Put texture coordinate data into buffer
-    this.setTexcoords(glContext, graphicContext.textureBuffer);
+
     var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, [0, 0, -500], [0,0,0]);
     this.setState({
       graphicContext : graphicContext,
+      models : {'id1': animatedElement1, 'id2': animatedElement2},
       camera : camera,
     });
-    
   }
+  
+
+  //animate bounce the shape against the borders
+  animate(now) {
+    now *= 0.001;
+    // Subtract the previous time from the current time
+    var deltaTime = now - this.state.animationContext.rafValue;
+    // Remember the current time for the next frame.
+    this.state.animationContext.rafValue = now;
+    //calculate next animation state
+    Object.keys(this.state.models).forEach(
+      modelId => this.state.models[modelId].animate(deltaTime)
+    );
+    //render
+    var gl = this.state.graphicContext.glContext;
+    // Tell WebGL how to convert from clip space to pixels
+    gl.viewport(0, 0, this.state.graphicContext.width, this.state.graphicContext.height);
+    // Clear the canvas AND the depth buffer.
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+    // Tell it to use our program (pair of shaders)
+    gl.useProgram(this.state.graphicContext.program);
+    //lookup camera
+    var selectedModel = this.state.models[this.state.selectedModel];
+    var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
+    this.state.camera.setTarget(cameraTarget);
+    var viewProjectionMatrix = this.state.camera.getViewProjectionMatrix();
+    //render each model from the scene
+    Object.keys(this.state.models).forEach( modelId => {
+      var model = this.state.models[modelId];
+      var glAttributes = {
+        a_position : {
+          location: this.state.graphicContext.positionAttributeLocation, 
+          buffer: model.positionBuffer, 
+          size: 3, 
+          type: gl.FLOAT,
+          normalize: false,
+          stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+          offset: 0,
+        },
+        a_texcoord: {
+          location: this.state.graphicContext.texcoordLocation, 
+          buffer: model.textureBuffer, 
+          size: 2, 
+          type: gl.FLOAT,
+          normalize: false,
+          stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+          offset: 0,
+        },
+      };
+      webGLUtils.setAttributes(gl, glAttributes);
+
+      var matrix = model.getModelViewMatrix(viewProjectionMatrix);
+     
+      // Set the matrix.
+      gl.uniformMatrix4fv(this.state.graphicContext.matrixLocation, false, matrix);
+
+      //set the texture for the model
+      model.swapTexture();
+     
+      // Draw the geometry.
+      gl.drawArrays(gl.TRIANGLES, 0, model.numberOfVertexes);
+    });
+    requestAnimationFrame(this.animate.bind(this));
+  }
+
+  //handle click on 'animate' button
+  handleAnimationClick() {
+    requestAnimationFrame(this.animate.bind(this));
+  }
+
+  selectModel(event){
+    this.setState({
+      ...this.state,
+      selectedModel: event.target.value,
+    });
+  }
+
+  
 
   //create a WebGL shader
   createShader(gl, type, source) {

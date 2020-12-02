@@ -1,8 +1,10 @@
+import {m4} from './utils/matrix.js';
+
 export class animatedModel {
 
-  constructor(id, vertexes, colors, textureCoordinates, width, height, depth){
+  constructor(id, gl, vertexes, colors, textureCoordinates){
     this.id = id;
-    this.vertex = model;
+    this.gl = gl;
     this.colors = colors;
     this.textureCoordinates = textureCoordinates;
 
@@ -35,9 +37,31 @@ export class animatedModel {
         y: 0,
         z: 0,
       },
-      width: width,
-      height: height,
-      depth: depth,
+    }
+    // create the position buffer.
+    this.positionBuffer = gl.createBuffer();
+    // Put geometry data into buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.STATIC_DRAW);
+    this.numberOfVertexes = vertexes.length/3; // 3 components per position
+    // Create a buffer to put texture coordinate in
+    this.textureBuffer = gl.createBuffer();
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = colorBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
+    // Create a texture.
+    this.texture = gl.createTexture();
+    this.image = null;
+  }
+
+  swapTexture(){
+    if(this.image == null) {
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+      // Fill the texture with a 1x1 blue pixel.
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
+    } else {
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.image);
+      this.gl.generateMipmap(this.gl.TEXTURE_2D);
     }
   }
 
@@ -45,6 +69,15 @@ export class animatedModel {
     this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
     this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;
     this.rotation.z += this.animationParameters.rotate.z * deltaTimeSecond;
+  }
+
+  getModelViewMatrix(viewProjectionMatrix){
+    var matrix = m4.translate(viewProjectionMatrix, this.position.x, this.position.y, this.position.z);
+    matrix = m4.xRotate(matrix, this.rotation.x * Math.PI / 180);
+    matrix = m4.yRotate(matrix, this.rotation.y * Math.PI / 180);
+    matrix = m4.zRotate(matrix, this.rotation.z * Math.PI / 180);
+    matrix = m4.scale(matrix, this.scale.x, this.scale.y, this.scale.z);
+    return matrix;
   }
 }
 

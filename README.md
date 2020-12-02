@@ -1,7 +1,6 @@
 # webgltraining
-WebGL training
-=======
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+WebGL training. Following tutorial from https://webglfundamentals.org/ 
+thanks @greggman and all other contributors.
 
 ## Available Scripts
 
