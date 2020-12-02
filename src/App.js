@@ -11,7 +11,9 @@ import VertexShader from './vertexShader.js';
 import FragmentShader from './fragmentShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
-import {m4} from './matrix.js';
+import {m4} from './utils/matrix.js';
+import {webGLUtils} from './utils/webGLUtils.js';
+import {lookAtCamera} from './utils/camera.js';
 import {animatedModel, model, colors, textureCoordinates} from './model.js';
 
 class App extends React.Component {
@@ -34,20 +36,10 @@ class App extends React.Component {
         width: 100,
         height: 30,
         depth: 400,
-        positionAttributeLocation: null,
-        rotationLocation: null, 
-        scaleLocation: null, 
-        resolutionUniformLocation: null, 
-        colorUniformLocation: null, 
-        positionBuffer: null,
-        colorBuffer: null,
       },
       models : {'id1': animatedElement1, 'id2': animatedElement2},
       selectedModel : 'id1',
-      camera : {
-        fieldOfViewDegree:60,
-        angleDegree: 0,
-      },
+      camera : null,
     };
   }
 
@@ -68,29 +60,9 @@ class App extends React.Component {
               )}
             </select>
             <TransformationPanel  key={this.state.selectedModel} selectedModel={ this.state.models[this.state.selectedModel] }/>
-            <>
-          <div>{'fieldOfViewDegree: ' + this.state.camera.fieldOfViewDegree }</div>
-          <Slider
-            axis="x"
-            xstep={1}
-            xmin={30}
-            xmax={180}
-            x={this.state.camera.fieldOfViewDegree}
-            onChange={
-            ({ x }) => {
-              this.setState({
-                camera: {
-                  ...this.state.camera,
-                  fieldOfViewDegree: x,
-                },
-              });
-            }
-            }
-          />
-        </>
-        <div>
-          <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
-        </div>
+            <div>
+              <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
+            </div>
           </Col>
         </Row>
       </Container>
@@ -125,58 +97,31 @@ class App extends React.Component {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(graphicContext.program);
     
-    // Turn on the attribute
-    gl.enableVertexAttribArray(graphicContext.positionAttributeLocation);
-    // Bind the position buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.positionBuffer);
-    // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 3;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(graphicContext.positionAttributeLocation, size, type, normalize, stride, offset);
-    
-    // Turn on the color attribute
-    gl.enableVertexAttribArray(graphicContext.texcoordLocation);
-    // Bind the color buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, graphicContext.textureBuffer);
-    // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
-    // size = 3;                 // 3 components per iteration
-    // type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
-    // normalize = true;         // normalize the data (convert from 0-255 to 0-1)
-    // stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
-    // offset = 0;               // start at the beginning of the buffer
-    // gl.vertexAttribPointer(graphicContext.colorLocation, size, type, normalize, stride, offset);
-    size = 2;
-    type = gl.FLOAT;
-    normalize = false;
-    stride = 0;
-    offset = 0;
-    gl.vertexAttribPointer(graphicContext.texcoordLocation, size, type, normalize, stride, offset);
+    var glAttributes = {
+      a_position : {
+        location: graphicContext.positionAttributeLocation, 
+        buffer: graphicContext.positionBuffer, 
+        size: 3, 
+        type: gl.FLOAT,
+        normalize: false,
+        stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+        offset: 0,
+      },
+      a_texcoord: {
+        location: graphicContext.texcoordLocation, 
+        buffer: graphicContext.textureBuffer, 
+        size: 2, 
+        type: gl.FLOAT,
+        normalize: false,
+        stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+        offset: 0,
+      },
+    };
+    webGLUtils.setAttributes(gl, glAttributes);
 
-    var aspect = graphicContext.width / graphicContext.height;
-    var zNear = 1;
-    var zFar = 2000;
-    
-    var projectionMatrix = m4.perspective(this.state.camera.fieldOfViewDegree * Math.PI / 180, aspect, zNear, zFar);
-    // Compute the position of the first F
     var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
-    // Compute a matrix for the camera
-    var cameraMatrix = m4.translation(0, 0, -500);
-    // Get the camera's position from the matrix we computed
-    var cameraPosition = [
-      cameraMatrix[12],
-      cameraMatrix[13],
-      cameraMatrix[14],
-    ];
-    var up = [0, -1, 0];
-    // Compute the camera's matrix using look at.
-    cameraMatrix = m4.lookAt(cameraPosition, cameraTarget, up);
-    // Make a view matrix from the camera matrix.
-    var viewMatrix = m4.inverse(cameraMatrix);
-    // Compute a view projection matrix
-    var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+    this.state.camera.setTarget(cameraTarget);
+    var viewProjectionMatrix = this.state.camera.getViewProjectionMatrix();
 
     Object.keys(models).forEach( modelId => {
       var model = models[modelId];
@@ -271,8 +216,10 @@ class App extends React.Component {
     graphicContext.textureBuffer = glContext.createBuffer();
     // Put texture coordinate data into buffer
     this.setTexcoords(glContext, graphicContext.textureBuffer);
+    var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, [0, 0, -500], [0,0,0]);
     this.setState({
-      graphicContext : graphicContext
+      graphicContext : graphicContext,
+      camera : camera,
     });
     
   }
