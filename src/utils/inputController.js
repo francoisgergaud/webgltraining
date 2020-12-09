@@ -4,10 +4,10 @@ export class inputController {
 		window.addEventListener('keydown', (e) => {
 			if (!e.repeat) {
 				switch(e.key) {
-					case "ArrowUp": camera.animationParameters.velocity = 60; break;
-					case "ArrowDown": camera.animationParameters.velocity = -60; break;
-					case "ArrowRight": camera.animationParameters.rotate.y = 60; break;
-					case "ArrowLeft": camera.animationParameters.rotate.y = -60; break;
+					case "ArrowUp": camera.animationParameters.velocity = -150; break;
+					case "ArrowDown": camera.animationParameters.velocity = 150; break;
+					case "ArrowRight": camera.animationParameters.rotate.y = -60; break;
+					case "ArrowLeft": camera.animationParameters.rotate.y = 60; break;
 				}
 			}
 		});

@@ -7,14 +7,15 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import WebGLCanvas from './WebGLCanvas.js';
 import TransformationPanel from './transformationPanel.js';
-import VertexShader from './vertexShader.js';
-import FragmentShader from './fragmentShader.js';
+import {texturedFragmentShader, texturedVertexShader, texturedShaderAttributeNames, texturedShaderUniformNames} from './shaders/texturedShader.js';
+import {coloredFragmentShader, coloredVertexShader, coloredShaderAttributeNames, coloredShaderUniformNames} from './shaders/coloredShader.js';
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
 import {webGLUtils} from './utils/webGLUtils.js';
 import {lookAtCamera} from './utils/camera.js';
 import {inputController} from './utils/inputController.js';
-import {animatedModel, model, colors, textureCoordinates} from './model.js';
+import {modelFactory, programInfo} from './model.js';
+import {model, colors, textureCoordinates} from './geometries.js';
 
 class App extends React.Component {
 
@@ -71,32 +72,26 @@ class App extends React.Component {
   setGlContext(glContext, canvas) {
     var width = canvas.width;
     var height = canvas.height
-    var vertexShaderSource = VertexShader;
-    var fragmentShaderSource = FragmentShader;
-    var vertexShader = this.createShader(glContext, glContext.VERTEX_SHADER, vertexShaderSource);
-    var fragmentShader = this.createShader(glContext, glContext.FRAGMENT_SHADER, fragmentShaderSource);
-    var program = this.createProgram(glContext, vertexShader, fragmentShader);
     var graphicContext = {...this.state.graphicContext}
     graphicContext.glContext= glContext; 
     graphicContext.width = width;
     graphicContext.height = height;
-    graphicContext.program = program;
-    graphicContext.positionAttributeLocation = glContext.getAttribLocation(program, "a_position");
-    graphicContext.matrixLocation = glContext.getUniformLocation(program, "u_matrix");
-    graphicContext.texcoordLocation = glContext.getAttribLocation(program, "a_texcoord");
-
-    //initialize the scene
-    var animatedElement1 = new animatedModel('id1', glContext, model, colors, textureCoordinates);
-    var animatedElement2 = new animatedModel('id2', glContext, model, colors, textureCoordinates);
+    var colorProgramInfo = new programInfo(glContext, coloredVertexShader, coloredFragmentShader, coloredShaderAttributeNames, coloredShaderUniformNames);
+    var texturedProgramInfo = new programInfo(glContext, texturedVertexShader, texturedFragmentShader, texturedShaderAttributeNames, texturedShaderUniformNames);
+    
+    //initialize the scene's models
+    var factory = new modelFactory(colorProgramInfo, texturedProgramInfo);
+    var animatedElement1 = factory.createAnimatedModelTextured('id1', model, textureCoordinates);
+    var animatedElement2 = factory.createAnimatedModelColored('id2', model, colors);
      
     // Asynchronously load an image for texture
     var image = new Image();
     image.src = "f-texture.png";
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
-      animatedElement1.image = image;
+      animatedElement1.setTexture(image);
     });
-    //var cameraPosition = {x: 0, y:0, z: -500}
+    //set the camera
     var cameraPosition = {x: 0, y:0, z: 500}
     var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, cameraPosition, /*[0,0,0]*/null);
     camera.rotation.y = 0;
@@ -135,8 +130,6 @@ class App extends React.Component {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
-    // Tell it to use our program (pair of shaders)
-    gl.useProgram(this.state.graphicContext.program);
     //lookup camera
     // var selectedModel = this.state.models[this.state.selectedModel];
     // var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
@@ -145,38 +138,7 @@ class App extends React.Component {
     //render each model from the scene
     Object.keys(this.state.models).forEach( modelId => {
       var model = this.state.models[modelId];
-      var glAttributes = {
-        a_position : {
-          location: this.state.graphicContext.positionAttributeLocation, 
-          buffer: model.positionBuffer, 
-          size: 3, 
-          type: gl.FLOAT,
-          normalize: false,
-          stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
-          offset: 0,
-        },
-        a_texcoord: {
-          location: this.state.graphicContext.texcoordLocation, 
-          buffer: model.textureBuffer, 
-          size: 2, 
-          type: gl.FLOAT,
-          normalize: false,
-          stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
-          offset: 0,
-        },
-      };
-      webGLUtils.setAttributes(gl, glAttributes);
-
-      var matrix = model.getModelViewMatrix(viewProjectionMatrix);
-     
-      // Set the matrix.
-      gl.uniformMatrix4fv(this.state.graphicContext.matrixLocation, false, matrix);
-
-      //set the texture for the model
-      model.swapTexture();
-     
-      // Draw the geometry.
-      gl.drawArrays(gl.TRIANGLES, 0, model.numberOfVertexes);
+      model.render(viewProjectionMatrix);
     });
     requestAnimationFrame(this.animate.bind(this));
   }
@@ -196,37 +158,6 @@ class App extends React.Component {
       selectedModel: modelSelectdId,
     });
   }
-
-  
-
-  //create a WebGL shader
-  createShader(gl, type, source) {
-    var shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (success) {
-      return shader;
-    }
-    console.log(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-  }
-
-  //create a WebGL program
-  createProgram(gl, vertexShader, fragmentShader) {
-    var program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (success) {
-      return program;
-    }
-    console.log(gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-  }
-
-
 
 }
 

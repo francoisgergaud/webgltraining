@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import './vertexShader.js';
-import './fragmentShader.js';
 
 ReactDOM.render(
   <React.StrictMode>
