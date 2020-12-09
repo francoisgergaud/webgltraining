@@ -14,7 +14,7 @@ export class animatedModel {
       z: 0,
     };
     this.rotation = {
-      x: 0,
+      x: 180, //the model coordinates are upside-down regarding the 3D referential. Need to revert it
       y: 0,
       z: 0,
     };
@@ -33,7 +33,7 @@ export class animatedModel {
         zOffset: 10,
       },
       rotate: {
-        x: 180,
+        x: 0, /*180 to animate*/
         y: 0,
         z: 0,
       },
@@ -84,6 +84,7 @@ export class animatedModel {
 //contains array of coordinate which define the vertices of a model
 export const model = new Float32Array([
           // left column front
+                    // left column front
           0,   0,  0,
           0, 150,  0,
           30,   0,  0,

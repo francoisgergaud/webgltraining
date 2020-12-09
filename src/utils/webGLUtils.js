@@ -2,7 +2,7 @@ var webGLUtils = {
 
 	setAttributes: function(gl, attributes){
 		for (var key in attributes) {
-			console.log("loading attributes " + key);
+			//console.log("loading attributes " + key);
 			var location = attributes[key].location;
 			gl.enableVertexAttribArray(location);
 		    gl.bindBuffer(gl.ARRAY_BUFFER, attributes[key].buffer);

@@ -13,6 +13,7 @@ import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
 import {webGLUtils} from './utils/webGLUtils.js';
 import {lookAtCamera} from './utils/camera.js';
+import {inputController} from './utils/inputController.js';
 import {animatedModel, model, colors, textureCoordinates} from './model.js';
 
 class App extends React.Component {
@@ -35,7 +36,7 @@ class App extends React.Component {
         depth: depth,
       },
       models : {},
-      selectedModel : 'id1',
+      selectedModel : null,
       camera : null,
     };
   }
@@ -67,7 +68,9 @@ class App extends React.Component {
   }
 
   //set the WebGL context: this is called when ReactJS initialize the view
-  setGlContext(glContext, width, height) {
+  setGlContext(glContext, canvas) {
+    var width = canvas.width;
+    var height = canvas.height
     var vertexShaderSource = VertexShader;
     var fragmentShaderSource = FragmentShader;
     var vertexShader = this.createShader(glContext, glContext.VERTEX_SHADER, vertexShaderSource);
@@ -93,13 +96,17 @@ class App extends React.Component {
       // Now that the image has loaded make copy it to the texture.
       animatedElement1.image = image;
     });
-
-    var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, [0, 0, -500], [0,0,0]);
+    //var cameraPosition = {x: 0, y:0, z: -500}
+    var cameraPosition = {x: 0, y:0, z: 500}
+    var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, cameraPosition, /*[0,0,0]*/null);
+    camera.rotation.y = 0;
     this.setState({
       graphicContext : graphicContext,
       models : {'id1': animatedElement1, 'id2': animatedElement2},
+      selectedModel : 'id1',
       camera : camera,
     });
+    var inputController1 = new inputController(canvas, camera);
   }
   
 
@@ -114,6 +121,12 @@ class App extends React.Component {
     Object.keys(this.state.models).forEach(
       modelId => this.state.models[modelId].animate(deltaTime)
     );
+    
+    //test controlled camera
+    //this.state.camera.setTarget(null);
+    this.state.camera.animate(deltaTime);
+    //end test
+    
     //render
     var gl = this.state.graphicContext.glContext;
     // Tell WebGL how to convert from clip space to pixels
@@ -125,9 +138,9 @@ class App extends React.Component {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(this.state.graphicContext.program);
     //lookup camera
-    var selectedModel = this.state.models[this.state.selectedModel];
-    var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
-    this.state.camera.setTarget(cameraTarget);
+    // var selectedModel = this.state.models[this.state.selectedModel];
+    // var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
+    // this.state.camera.setTarget(cameraTarget);
     var viewProjectionMatrix = this.state.camera.getViewProjectionMatrix();
     //render each model from the scene
     Object.keys(this.state.models).forEach( modelId => {
@@ -174,9 +187,13 @@ class App extends React.Component {
   }
 
   selectModel(event){
+    var modelSelectdId = event.target.value;
+    var selectedModelPosition = this.state.models[modelSelectdId].position;
+    var cameraTarget = [selectedModelPosition.x, selectedModelPosition.y, selectedModelPosition.z];
+    this.state.camera.setTarget(cameraTarget);
     this.setState({
       ...this.state,
-      selectedModel: event.target.value,
+      selectedModel: modelSelectdId,
     });
   }
 
