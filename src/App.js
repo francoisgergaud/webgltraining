@@ -16,6 +16,7 @@ import {lookAtCamera} from './utils/camera.js';
 import {inputController} from './utils/inputController.js';
 import {modelFactory, programInfo} from './model.js';
 import {model, colors, textureCoordinates} from './geometries.js';
+import {terrainGenerator} from './utils/geometryGenerator.js';
 
 class App extends React.Component {
 
@@ -91,13 +92,18 @@ class App extends React.Component {
       // Now that the image has loaded make copy it to the texture.
       animatedElement1.setTexture(image);
     });
+
+    //generate the terrain
+    var generator = new terrainGenerator();
+    var terrain = factory.createAnimatedModelColored('id3', generator.vertexes, generator.colors);
+
     //set the camera
     var cameraPosition = {x: 0, y:0, z: 500}
     var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, cameraPosition, /*[0,0,0]*/null);
     camera.rotation.y = 0;
     this.setState({
       graphicContext : graphicContext,
-      models : {'id1': animatedElement1, 'id2': animatedElement2},
+      models : {'id1': animatedElement1, 'id2': animatedElement2, 'id3': terrain},
       selectedModel : 'id1',
       camera : camera,
     });
@@ -126,6 +132,7 @@ class App extends React.Component {
     var gl = this.state.graphicContext.glContext;
     // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, this.state.graphicContext.width, this.state.graphicContext.height);
+    gl.clearColor(176/256, 245/256, 255/256, 1.0);
     // Clear the canvas AND the depth buffer.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.CULL_FACE);
