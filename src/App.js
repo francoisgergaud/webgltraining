@@ -41,6 +41,7 @@ class App extends React.Component {
       selectedModel : null,
       camera : null,
     };
+    this.mapCanvas = React.createRef();  
   }
 
   //component render
@@ -63,10 +64,30 @@ class App extends React.Component {
             <div>
               <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
             </div>
+            <div>
+              height map:
+              <canvas id="mapHeights" width="100%" height="100%" ref={this.mapCanvas}></canvas>
+            </div>
           </Col>
         </Row>
       </Container>
     );
+  }
+
+  componentDidMount(){
+    var myContext= this.mapCanvas.current.getContext('2d');
+    var id = myContext.createImageData(1,1);
+    var d  = id.data;
+    for(var x=0; x < this.terrain.heights.length; x++){
+      for(var y=0; y < this.terrain.heights[x].length; y++){
+        var coeff = this.terrain.heights[x][y] * 255;
+        d[0]   = coeff;
+        d[1]   = coeff;
+        d[2]   = coeff
+        d[3]   = 255;
+        myContext.putImageData( id, x, y );
+      }
+    }
   }
 
   //set the WebGL context: this is called when ReactJS initialize the view
@@ -95,8 +116,9 @@ class App extends React.Component {
 
     //generate the terrain
     var generator = new terrainGenerator();
+    this.terrain = generator;
     var terrain = factory.createAnimatedModelColored('id3', generator.vertexes, generator.colors);
-
+    
     //set the camera
     var cameraPosition = {x: 0, y:0, z: 500}
     var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, cameraPosition, /*[0,0,0]*/null);
