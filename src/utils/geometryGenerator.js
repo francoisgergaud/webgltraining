@@ -1,32 +1,108 @@
-export class terrainGenerator{
+export class Terrain{
 
+	//todo: this class is mixing the terran properties with the rendered voxels. Split tjis class
 	constructor(){
+		this.cells = [];
 		this.voxelSize = 20;
-		this.generateVoxels();
+		this.gridWidth = 100;
+		this.gridHeight = 100;
+		this.voxelColors = {
+			1: {top: [45, 201, 10], side: [161, 68, 18]},//land voxel
+			2: {top: [5, 20, 237], side: [5, 20, 237]},//water-river voxel
+			3: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
+		};
+		this.generate();	
 	}
 
-	generateVoxels(){
+	generate(){
+		//generate the terrain cells with their heights
 		var vertexes = [];
 		var colors = [];
-		this.heights = [];
-		for(var i = 0; i <100; i++){
-			var tempHeights = [];
-			this.heights.push(tempHeights);
-			for(var j = 0; j <100; j++){
-				//var y = Math.floor(Math.random() * this.voxelSize);
-				var y = (generatePerlinNoise(i/10, j/10)+1)/2;
-				tempHeights.push(y);
-				var voxel = this.generateVoxelGeometryAndColor(i, y*this.voxelSize*10, j, this.voxelSize);
+		var heightHarmonics = new Map([
+			[10, this.voxelSize*5],
+			[40, this.voxelSize*10]
+		]);
+		var heightSeed= 1;
+		var heights = generate2DPerlinNoise(heightSeed, this.gridWidth, this.gridHeight, heightHarmonics);
+		for(var i = 0; i <this.gridWidth; i++){
+			var cellsColumn = [];
+			this.cells.push(cellsColumn);
+			for(var j = 0; j < this.gridHeight; j++){
+				cellsColumn.push({height: heights[i][j], type: 1});
+			}		
+		}
+		//generate a river
+		var riverSeed = 13;
+		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed);
+		this.generateRiver(Math.floor(pseudoRandomGenerator.generate()*this.gridWidth), Math.floor(pseudoRandomGenerator.generate()*this.gridHeight));
+
+		//generate the geometry for the terrain.
+		////TODO: generate the voxel in another class or method
+		for(var i = 0; i <this.gridWidth; i++){
+			for(var j = 0; j <this.gridHeight; j++){
+				var height =this.cells[i][j].height;
+				var color = this.voxelColors[this.cells[i][j].type];
+				var voxel = this.generateVoxelGeometryAndColor(i, height, j, this.voxelSize, color);
 			 	vertexes.push(...voxel.vertexes);
 			 	colors.push(...voxel.colors);
-			}		
+			}
 		}
 		this.vertexes = new Float32Array(vertexes);
 		this.colors = new Uint8Array(colors);
 	}
 
+	generateRiver(i, j){
+		this.cells[i][j].type = 2;
+		var maxHeight = this.cells[i][j].height;
+		var direction = 0;
+		var newI = i;
+		var newJ = j;
+		if(i <99 && maxHeight < this.cells[i+1][j].height){
+			maxHeight = this.cells[i+1][j].height;
+			newI = i+1;
+		} 
+		if(i > 0 && maxHeight < this.cells[i-1][j].height){
+			maxHeight = this.cells[i-1][j].height;
+			newI = i-1;
+		}
+		if(j < 99 && maxHeight < this.cells[i][j+1].height){
+			maxHeight = this.cells[i][j+1].height;
+			newI = i;
+			newJ = j+1;
+		} 
+		if(j > 0 && maxHeight < this.cells[i][j-1].height){
+			maxHeight = this.cells[i][j-1].height;
+			newI = i;
+			newJ = j-1;
+		}
+		if(newI != i || newJ != j){
+			this.generateRiver(newI, newJ);
+		} else {
+			var floodMaxHeight = maxHeight - (this.voxelSize/5);
+			this.flood(i, j, floodMaxHeight);
+		}
+	}
 
-	generateVoxelGeometryAndColor(x, y, z, voxelSize){
+	flood(i, j, maxHeight){
+		if(this.cells[i][j].type != 3){
+			this.cells[i][j].type = 3;
+			this.cells[i][j].height = maxHeight;
+			if(i <99 && maxHeight < this.cells[i+1][j].height){
+				this.flood(i+1, j, maxHeight);
+			} 
+			if(i > 0 && maxHeight < this.cells[i-1][j].height){
+				this.flood(i-1, j, maxHeight);
+			}
+			if(j < 99 && maxHeight < this.cells[i][j+1].height){
+				this.flood(i, j+1, maxHeight);
+			} 
+			if(j > 0 && maxHeight < this.cells[i][j-1].height){
+				this.flood(i, j-1, maxHeight);
+			}
+		}
+	}
+
+	generateVoxelGeometryAndColor(x, y, z, voxelSize, voxelColors){
 		var startX = x * voxelSize;
 		var startZ = z * voxelSize;
 		var startY = y;
@@ -47,13 +123,13 @@ export class terrainGenerator{
 			endX, startY, endZ
 		);
 		colors.push(
-			45, 201, 10,
-	        45, 201, 10,
-	        45, 201, 10,
-	        45, 201, 10,
-	        45, 201, 10,
-	        45, 201, 10
-	    );
+			...voxelColors.top,
+			...voxelColors.top,
+			...voxelColors.top,
+			...voxelColors.top,
+			...voxelColors.top,
+			...voxelColors.top,
+		);
 		//front quad
 		vertexes.push(
 			startX, startY, startZ,
@@ -66,13 +142,13 @@ export class terrainGenerator{
 			endX, startY, startZ
 		);
 		colors.push(
-			161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18
-	    );
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+		);
 		//right quad
 		vertexes.push(
 			endX, startY, startZ,
@@ -85,13 +161,13 @@ export class terrainGenerator{
 			endX, startY, endZ
 		);
 		colors.push(
-			161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18
-	    );
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+		);
 		//behind quad
 		vertexes.push(
 			endX, startY, endZ,
@@ -104,13 +180,13 @@ export class terrainGenerator{
 			startX, startY, endZ
 		);
 		colors.push(
-			161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18
-	    );
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+		);
 		//left quad
 		vertexes.push(
 			startX, startY, endZ,
@@ -123,40 +199,15 @@ export class terrainGenerator{
 			startX, startY, startZ
 		);
 		colors.push(
-			161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18,
-	        161, 68, 18
-	    );
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+			...voxelColors.side,
+		);
 	    return {vertexes: vertexes, colors: colors};
 	}
-}
-
-//from https://en.wikipedia.org/wiki/Perlin_noise
-function generatePerlinNoise(x, y){
-	// Determine grid cell coordinates
-    var x0 = Math.floor(x);
-    var x1 = x0 + 1;
-    var y0 = Math.floor(y);
-    var y1 = y0 + 1;
-
-    // Determine interpolation weights
-    // Could also use higher order polynomial/s-curve here
-    var sx = x - x0;
-    var sy = y - y0;
-
-    var n0 = dotGridGradient(x0, y0, x, y);
-    var n1 = dotGridGradient(x1, y0, x, y);
-    var ix0 = interpolate(n0, n1, sx);
-
-    n0 = dotGridGradient(x0, y1, x, y);
-    n1 = dotGridGradient(x1, y1, x, y);
-    var ix1 = interpolate(n0, n1, sx);
-
-    var value = interpolate(ix0, ix1, sy);
-    return value;
 }
 
 function interpolate(a0, a1, w) {
@@ -173,20 +224,81 @@ function interpolate(a0, a1, w) {
     return ((a1 - a0) * ((6*w - 15)*w + 10)*w*w*w) + a0;
 }
 
-// Computes the dot product of the distance and gradient vectors.
-function dotGridGradient(ix, iy, x, y) {
-    // Get gradient from integer coordinates
-    var gradient = randomGradient(ix, iy);
-    // Compute the distance vector
-    var dx = x - ix;
-    var dy = y - iy;
-    // Compute the dot-product
-  return (dx*gradient.x + dy*gradient.y);
+
+function generate2DPerlinNoise(seed, width, height, harmonics){
+	var lgGenerator = new LinearCongruentialGenerator(seed);
+	var harmonicNoise = new Map();
+	//calculare the grid-factors
+	for (const [offset, amplitude] of harmonics) {
+		var factors = [];
+		for(var i = 0; i < width+offset; i+=offset){
+			var factorColumn = [];
+			factors.push(factorColumn);
+			for(var j = 0; j < height+offset; j+=offset){
+				var angleRad = lgGenerator.generate() * Math.PI *2;
+				factorColumn.push({x: Math.cos(angleRad), y: Math.sin(angleRad)});
+			}
+		}
+		harmonicNoise.set(offset, factors);
+	}
+	//interpolate all the cells
+	var result = [];
+	var firstLoop = true;
+	for (var [offset, factors] of harmonicNoise) {
+		for(var i = 0; i < width; i++){
+			var resultColumn = null;
+			if(firstLoop) {
+				resultColumn = [];
+				result.push(resultColumn);
+			} else {
+				resultColumn = result[i];
+			}
+			for(var j = 0; j < height; j++){
+				var left = Math.floor(i/offset);
+			    var right = left + 1;
+			    var top = Math.floor(j/offset);
+			    var bottom = top + 1;
+			    // Determine interpolation weights
+			    var sx = (i%offset)/offset;
+			    var sy = (j%offset)/offset;
+			    //dot products
+			    var leftTopVector = factors[left][top];
+			    var n0 = leftTopVector.x * sx + leftTopVector.y * sy;
+			    var rightTopVector = factors[right][top];
+				var n1 = rightTopVector.x * (sx-1) + rightTopVector.y * sy;
+			    var ix0 = interpolate(n0, n1, sx);
+			    var leftBottomVector = factors[left][bottom];
+			    n0 = leftBottomVector.x * sx + leftBottomVector.y * (sy-1);
+			    var rightBottomVector = factors[right][bottom];
+			    n1 = rightBottomVector.x * (sx-1) + rightBottomVector.y * (sy-1);
+			    var ix1 = interpolate(n0, n1, sx);
+
+			    var value = interpolate(ix0, ix1, sy) * harmonics.get(offset);
+			    if(firstLoop){
+			    	resultColumn.push(value);
+			   	} else {
+			   		resultColumn[j] += value;
+			   	} 
+			}
+		}
+		firstLoop = false;
+	}
+	return result;
+
 }
 
-function randomGradient(ix, iy) {
-    // Random float. No precomputed gradients mean this works for any number of grid coordinates
-    var random = 2920 * Math.sin(ix * 21942 + iy * 171324 + 8912) * Math.cos(ix * 23157 * iy * 217832 + 9758);
-    return {x: Math.cos(random), y: Math.sin(random) };
-}
+//pseudo-random generator using seed
+class LinearCongruentialGenerator{
+	constructor(seed){
+		this.modulus=2^48;
+		this.multiplier=25214903917;
+		this.increment=11;
+		this.current=seed;
+	}
 
+	generate(){
+		this.current = (this.multiplier*this.current + this.increment) % this.modulus;
+		return this.current/this.modulus;
+	}
+
+}

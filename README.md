@@ -2,6 +2,11 @@
 WebGL training. Following tutorial from https://webglfundamentals.org/ 
 thanks @greggman and all other contributors.
 
+## Current state
+* terrain generation using 2D Perlin noise.
+* camera movement stick to the terrain.
+
+
 ## Available Scripts
 
 In the project directory, you can run:

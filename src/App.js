@@ -12,11 +12,12 @@ import {coloredFragmentShader, coloredVertexShader, coloredShaderAttributeNames,
 import Slider from 'react-input-slider';
 import {Knob} from "react-rotary-knob";
 import {webGLUtils} from './utils/webGLUtils.js';
-import {lookAtCamera} from './utils/camera.js';
+import {LookAtCamera} from './utils/camera.js';
 import {inputController} from './utils/inputController.js';
 import {modelFactory, programInfo} from './model.js';
 import {model, colors, textureCoordinates} from './geometries.js';
-import {terrainGenerator} from './utils/geometryGenerator.js';
+import {Terrain} from './utils/geometryGenerator.js';
+import {Player} from './utils/player.js';
 
 class App extends React.Component {
 
@@ -78,9 +79,9 @@ class App extends React.Component {
     var myContext= this.mapCanvas.current.getContext('2d');
     var id = myContext.createImageData(1,1);
     var d  = id.data;
-    for(var x=0; x < this.terrain.heights.length; x++){
-      for(var y=0; y < this.terrain.heights[x].length; y++){
-        var coeff = this.terrain.heights[x][y] * 255;
+    for(var x=0; x < this.terrain.cells.length; x++){
+      for(var y=0; y < this.terrain.cells[x].length; y++){
+        var coeff = this.terrain.cells[x][y].height * 255;
         d[0]   = coeff;
         d[1]   = coeff;
         d[2]   = coeff
@@ -115,21 +116,22 @@ class App extends React.Component {
     });
 
     //generate the terrain
-    var generator = new terrainGenerator();
-    this.terrain = generator;
-    var terrain = factory.createAnimatedModelColored('id3', generator.vertexes, generator.colors);
+    this.terrain = new Terrain();
+    var terrainModel = factory.createAnimatedModelColored('id3', this.terrain.vertexes, this.terrain.colors);
     
     //set the camera
     var cameraPosition = {x: 0, y:0, z: 500}
-    var camera = new lookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180, cameraPosition, /*[0,0,0]*/null);
+    var camera = new LookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180);
     camera.rotation.y = 0;
+    var player = new Player(camera, this.terrain);
     this.setState({
       graphicContext : graphicContext,
-      models : {'id1': animatedElement1, 'id2': animatedElement2, 'id3': terrain},
+      models : {'id1': animatedElement1, 'id2': animatedElement2, 'id3': terrainModel},
       selectedModel : 'id1',
-      camera : camera,
+      player : player,
+      camera: camera,
     });
-    var inputController1 = new inputController(canvas, camera);
+    var inputController1 = new inputController(canvas, player);
   }
   
 
@@ -147,7 +149,7 @@ class App extends React.Component {
     
     //test controlled camera
     //this.state.camera.setTarget(null);
-    this.state.camera.animate(deltaTime);
+    this.state.player.animate(deltaTime);
     //end test
     
     //render
