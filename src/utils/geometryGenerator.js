@@ -18,6 +18,7 @@ export class Terrain{
 		//generate the terrain cells with their heights
 		var vertexes = [];
 		var colors = [];
+		var normals = [];
 		var heightHarmonics = new Map([
 			[10, this.voxelSize*5],
 			[40, this.voxelSize*10]
@@ -45,10 +46,12 @@ export class Terrain{
 				var voxel = this.generateVoxelGeometryAndColor(i, height, j, this.voxelSize, color);
 			 	vertexes.push(...voxel.vertexes);
 			 	colors.push(...voxel.colors);
+			 	normals.push(...voxel.normals);
 			}
 		}
 		this.vertexes = new Float32Array(vertexes);
 		this.colors = new Uint8Array(colors);
+		this.normals = new Float32Array(normals);
 	}
 
 	generateRiver(i, j){
@@ -111,6 +114,7 @@ export class Terrain{
 		var endY = startY + voxelSize;
 		var vertexes = [];
 		var colors = [];
+		var normals = [];
 		//top quad
 		vertexes.push(
 			startX, startY, endZ,
@@ -129,6 +133,14 @@ export class Terrain{
 			...voxelColors.top,
 			...voxelColors.top,
 			...voxelColors.top,
+		);
+		normals.push(
+			0, 1, 0,
+			0, 1, 0,
+			0, 1, 0,
+			0, 1, 0,
+			0, 1, 0,
+			0, 1, 0
 		);
 		//front quad
 		vertexes.push(
@@ -149,6 +161,14 @@ export class Terrain{
 			...voxelColors.side,
 			...voxelColors.side,
 		);
+		normals.push(
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1
+		);
 		//right quad
 		vertexes.push(
 			endX, startY, startZ,
@@ -167,6 +187,14 @@ export class Terrain{
 			...voxelColors.side,
 			...voxelColors.side,
 			...voxelColors.side,
+		);
+		normals.push(
+			1, 0, 0,
+			1, 0, 0,
+			1, 0, 0,
+			1, 0, 0,
+			1, 0, 0,
+			1, 0, 0
 		);
 		//behind quad
 		vertexes.push(
@@ -187,6 +215,14 @@ export class Terrain{
 			...voxelColors.side,
 			...voxelColors.side,
 		);
+		normals.push(
+			0, 0, -1,
+			0, 0, -1,
+			0, 0, -1,
+			0, 0, -1,
+			0, 0, -1,
+			0, 0, -1
+		);
 		//left quad
 		vertexes.push(
 			startX, startY, endZ,
@@ -206,7 +242,15 @@ export class Terrain{
 			...voxelColors.side,
 			...voxelColors.side,
 		);
-	    return {vertexes: vertexes, colors: colors};
+		normals.push(
+			-1, 0, 0,
+			-1, 0, 0,
+			-1, 0, 0,
+			-1, 0, 0,
+			-1, 0, 0,
+			-1, 0, 0
+		);
+	    return {vertexes: vertexes, colors: colors, normals: normals};
 	}
 }
 

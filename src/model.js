@@ -1,5 +1,9 @@
 import {m4} from './utils/matrix.js';
 
+
+/**
+ * A model with an update method and some velocity parameters to animate it.
+ */
 export class animatedModel {
 
   constructor(id, programInfo, vertexes, textureCoordinates){
@@ -63,12 +67,6 @@ export class animatedModel {
     gl.generateMipmap(gl.TEXTURE_2D);
   }
 
-  animate(deltaTimeSecond){
-    this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
-    this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;
-    this.rotation.z += this.animationParameters.rotate.z * deltaTimeSecond;
-  }
-
   getModelViewMatrix(viewProjectionMatrix){
     var matrix = m4.translate(viewProjectionMatrix, this.position.x, this.position.y, this.position.z);
     matrix = m4.xRotate(matrix, this.rotation.x * Math.PI / 180);
@@ -78,7 +76,22 @@ export class animatedModel {
     return matrix;
   }
 
-  render(viewProjectionMatrix){
+  getWorldMatrix(){
+    var matrix = m4.translation(this.position.x, this.position.y, this.position.z);
+    matrix = m4.xRotate(matrix, this.rotation.x * Math.PI / 180);
+    matrix = m4.yRotate(matrix, this.rotation.y * Math.PI / 180);
+    matrix = m4.zRotate(matrix, this.rotation.z * Math.PI / 180);
+    matrix = m4.scale(matrix, this.scale.x, this.scale.y, this.scale.z);
+    return matrix;
+  }
+
+  update(deltaTimeSecond){
+    this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
+    this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;
+    this.rotation.z += this.animationParameters.rotate.z * deltaTimeSecond;
+  }
+
+  render(viewProjectionMatrix, lightDirection){
     var gl = this.programInfo.gl;
     gl.useProgram(this.programInfo.program);
     for (var key in this.attributes) {
@@ -88,10 +101,16 @@ export class animatedModel {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.attributes[key].buffer);
       gl.vertexAttribPointer(location, this.attributes[key].size, this.attributes[key].type, this.attributes[key].normalize, this.attributes[key].stride, this.attributes[key].offset);
     }
-    var matrix = this.getModelViewMatrix(viewProjectionMatrix);
+    //var matrix = this.getModelViewMatrix(viewProjectionMatrix);
+    var worldMatrix = this.getWorldMatrix();
+    var worldViewProjectionMatrix = m4.multiply(viewProjectionMatrix, worldMatrix);
    
     // Set the matrix.
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_matrix'], false, matrix);
+    gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_worldViewProjection'], false, worldViewProjectionMatrix);
+    gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_world'], false, worldMatrix);
+      // set the light direction.
+    //var lightDirection = m4.normalize([0.5, -1.0, 0.5]);
+    gl.uniform3fv(this.programInfo.uniformLocations['u_reverseLightDirection'], m4.normalize(lightDirection));
    
     // Draw the geometry.
     gl.drawArrays(gl.TRIANGLES, 0, this.numberOfVertexes);
@@ -169,10 +188,10 @@ export class modelFactory {
     return model;
   }
 
-  createAnimatedModelColored(id, vertexes, colors){
+  createAnimatedModelColored(id, vertexes, colors, normals){
     var model = new animatedModel(id, this.colorProgram, vertexes);
     // Create a buffer to put texture coordinate in
-    var gl = this.textureProgram.gl;
+    var gl = this.colorProgram.gl;
     var colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
@@ -181,6 +200,17 @@ export class modelFactory {
       size: 3, 
       type: gl.UNSIGNED_BYTE,
       normalize: true,
+      stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+      offset: 0,
+    };
+    var normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+    model.attributes['a_normal'] = {
+      buffer: normalBuffer, 
+      size: 3, 
+      type: gl.FLOAT,
+      normalize: false,
       stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
       offset: 0,
     };

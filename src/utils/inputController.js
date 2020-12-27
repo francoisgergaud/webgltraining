@@ -1,4 +1,4 @@
-export class inputController {
+export class InputController {
 
 	constructor(canvas, player){
 		window.addEventListener('keydown', (e) => {
@@ -8,6 +8,7 @@ export class inputController {
 					case "ArrowDown": player.animationParameters.velocity = 150; break;
 					case "ArrowRight": player.animationParameters.rotate.y = -60; break;
 					case "ArrowLeft": player.animationParameters.rotate.y = 60; break;
+					default: break;
 				}
 			}
 		});
@@ -17,6 +18,7 @@ export class inputController {
 				case "ArrowDown": player.animationParameters.velocity = 0; break;
 				case "ArrowRight": player.animationParameters.rotate.y = 0; break;
 				case "ArrowLeft": player.animationParameters.rotate.y = 0; break;
+				default: break;
 			}
 		});
 	}

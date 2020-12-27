@@ -24,7 +24,7 @@ export class Player {
 		}
 	}
 
-	animate(deltaTimeSecond){
+	update(deltaTimeSecond){
 		this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
 	    this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;
 	    this.rotation.z += this.animationParameters.rotate.z * deltaTimeSecond;
@@ -51,7 +51,7 @@ export class Player {
 			//this.position.y = cellHeight-this.terrain.voxelSize;
 		}
 		//smooth the vertical movement
-		if(this.position.y != this.targetPositionY){
+		if(this.position.y !== this.targetPositionY){
 			if(this.position.y > this.targetPositionY) {
 				this.position.y-=this.animationParameters.verticalVelocity*deltaTimeSecond;
 				if(this.position.y < this.targetPositionY){

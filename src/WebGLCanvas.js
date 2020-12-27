@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import ReactDOM from "react-dom";
-import $ from 'jquery'; 
+import React from 'react';
 
 class WebGLCanvas extends React.Component {
 
@@ -17,7 +15,7 @@ class WebGLCanvas extends React.Component {
   }
   
   render() {
-    this.state.initialized = true;
+    this.setState({initialized : true});
     return (
         <canvas id="c" width="100%" height="100%" ref={this.canvas}></canvas>
     );
@@ -29,17 +27,6 @@ class WebGLCanvas extends React.Component {
     var glContext = this.canvas.current.getContext("webgl");
     this.canvas.current.tabIndex = 1000;
     this.props.afterInit(glContext, this.canvas.current);
-    // this.canvas.current.addEventListener('keydown', (e) => {
-    //   if (!e.repeat) {
-    //     switch(e.key) {
-    //       case "ArrowUp": console.log("ArrowUp"); break;
-    //       case "ArrowDown": console.log("ArrowDown"); break;
-    //       case "ArrowRight": console.log("ArrowRight"); break;
-    //       case "ArrowLeft": console.log("ArrowLeft"); break;
-    //     }
-    //   }
-
-    // });
   }
 
 }

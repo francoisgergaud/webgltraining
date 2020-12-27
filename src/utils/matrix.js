@@ -1,10 +1,10 @@
 var m4 = {
 
   lookAt: function(cameraPosition, target, up) {
-    var zAxis = normalize(
-        subtractVectors(cameraPosition, target));
-    var xAxis = normalize(cross(up, zAxis));
-    var yAxis = normalize(cross(zAxis, xAxis));
+    var zAxis = m4.normalize(
+        m4.subtractVectors(cameraPosition, target));
+    var xAxis = m4.normalize(m4.cross(up, zAxis));
+    var yAxis = m4.normalize(m4.cross(zAxis, xAxis));
 
     return [
        xAxis[0], xAxis[1], xAxis[2], 0,
@@ -262,27 +262,29 @@ var m4 = {
     return dst;
   },
 
+  subtractVectors: function(a, b) {
+    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  },
+
+  normalize: function(v) {
+    var length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    // make sure we don't divide by 0.
+    if (length > 0.00001) {
+      return [v[0] / length, v[1] / length, v[2] / length];
+    } else {
+      return [0, 0, 0];
+    }
+  },
+
+  cross: function(a, b) {
+    return [a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]];
+  },
+
 };
 
 
-function subtractVectors(a, b) {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-}
 
-function normalize(v) {
-  var length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-  // make sure we don't divide by 0.
-  if (length > 0.00001) {
-    return [v[0] / length, v[1] / length, v[2] / length];
-  } else {
-    return [0, 0, 0];
-  }
-}
-
-function cross(a, b) {
-  return [a[1] * b[2] - a[2] * b[1],
-          a[2] * b[0] - a[0] * b[2],
-          a[0] * b[1] - a[1] * b[0]];
-}
 
 export {m4};
