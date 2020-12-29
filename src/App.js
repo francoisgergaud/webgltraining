@@ -11,9 +11,9 @@ import {texturedFragmentShader, texturedVertexShader, texturedShaderAttributeNam
 import {coloredFragmentShader, coloredVertexShader, coloredShaderAttributeNames, coloredShaderUniformNames} from './shaders/coloredShader.js';
 import {LookAtCamera} from './utils/camera.js';
 import {InputController} from './utils/inputController.js';
-import {modelFactory, programInfo} from './model.js';
+import {ModelFactory, ProgramInfo} from './model.js';
 import {model, textureCoordinates} from './geometries.js';
-import {Terrain} from './utils/geometryGenerator.js';
+import {TerrainFactory, Terrain, TerrainGeometryGenerator, Tree} from './utils/terrainGenerator.js';
 import {Player} from './utils/player.js';
 
 class App extends React.Component {
@@ -105,11 +105,11 @@ class App extends React.Component {
     graphicContext.glContext= glContext; 
     graphicContext.width = width;
     graphicContext.height = height;
-    var colorProgramInfo = new programInfo(glContext, coloredVertexShader, coloredFragmentShader, coloredShaderAttributeNames, coloredShaderUniformNames);
-    var texturedProgramInfo = new programInfo(glContext, texturedVertexShader, texturedFragmentShader, texturedShaderAttributeNames, texturedShaderUniformNames);
+    var colorProgramInfo = new ProgramInfo(glContext, coloredVertexShader, coloredFragmentShader, coloredShaderAttributeNames, coloredShaderUniformNames);
+    var texturedProgramInfo = new ProgramInfo(glContext, texturedVertexShader, texturedFragmentShader, texturedShaderAttributeNames, texturedShaderUniformNames);
     
     //initialize the scene's models
-    var factory = new modelFactory(colorProgramInfo, texturedProgramInfo);
+    var factory = new ModelFactory(colorProgramInfo, texturedProgramInfo);
     var animatedElement1 = factory.createAnimatedModelTextured('id1', model, textureCoordinates);
     //var animatedElement2 = factory.createAnimatedModelColored('id2', model, colors);
      
@@ -122,8 +122,16 @@ class App extends React.Component {
     });
 
     //generate the terrain
-    this.terrain = new Terrain();
-    var terrainModel = factory.createAnimatedModelColored('id3', this.terrain.vertexes, this.terrain.colors, this.terrain.normals);
+    var terrainFactory = new TerrainFactory();
+    this.terrain = terrainFactory.generate(20, 100, 100);
+    var terrainGeometryGenerator = new TerrainGeometryGenerator();
+    var terrainGeometry = terrainGeometryGenerator.generate(this.terrain);
+    var terrainModel = factory.createAnimatedModelColored('id3', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
+    
+    //generate a tree
+    //this.tree = new Tree();
+    //var treeModel = factory.createAnimatedModelColored('id4', this.tree.vertexes, this.tree.colors, this.tree.normals);
+    //treeModel.position = {x:50, y:50, z: this.terrain.cells[Math.floor(50/this.terrain.cellSize)][Math.floor(50/this.terrain.cellSize)].height - this.terrain.cellSize};
     
     //set the camera
     var camera = new LookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180);

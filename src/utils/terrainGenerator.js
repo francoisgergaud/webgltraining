@@ -1,111 +1,170 @@
-export class Terrain{
 
-	//todo: this class is mixing the terran properties with the rendered voxels. Split tjis class
-	constructor(){
-		this.cells = [];
-		this.voxelSize = 20;
-		this.gridWidth = 100;
-		this.gridHeight = 100;
-		this.voxelColors = {
-			1: {top: [45, 201, 10], side: [161, 68, 18]},//land voxel
-			2: {top: [5, 20, 237], side: [5, 20, 237]},//water-river voxel
-			3: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
-		};
-		this.generate();	
+/**
+ * The terrain contains the logic data for the terrain. A terrain can be seen as 2D array of cells.
+ * Cells have the following definition: {type: <number>, height: <number>}
+ */
+export class Terrain{
+	constructor(cellSize, cells, gridWidth, gridHeight){
+		this.cells = cells;
+		this.cellSize = cellSize;
+		this.gridWidth = gridWidth;
+		this.gridHeight = gridHeight;
 	}
 
-	generate(){
+/**
+ * Return the cell depending on the absolute coordinate
+ * @param  {float} i the X coordinate
+ * @param  {float} j the Y coordinate
+ * @return {Cell} the cell if found. null otherwise.
+ */
+	getCell(i,j){
+		var cellX = Math.floor(i/this.cellSize)
+		var cellY = Math.floor(j/this.cellSize)
+		if(cellX >= 0 && cellX < this.gridWidth && cellY >= 0 && cellY < this.gridHeight){
+			return this.cells[cellX][cellY];
+		} else {
+			return null;
+		}
+	}
+}
+
+/**
+ * Terrain generator: based on 2D Perlin noise 
+ */
+export class TerrainFactory {
+
+	/**
+	 * generate a terrain.
+	 * @param  {int} cellSize the cell size.
+	 * @param  {int} width The grid's width.
+	 * @param  {int} height The grid's height.
+	 * @return {Terrain} The terrain generated.
+	 */
+	generate(cellSize, width, height){
 		//generate the terrain cells with their heights
-		var vertexes = [];
-		var colors = [];
-		var normals = [];
 		var heightHarmonics = new Map([
-			[10, this.voxelSize*5],
-			[40, this.voxelSize*10]
+			[10, cellSize*5],
+			[40, cellSize*10]
 		]);
 		var heightSeed= 1;
-		var heights = generate2DPerlinNoise(heightSeed, this.gridWidth, this.gridHeight, heightHarmonics);
-		for(var i = 0; i <this.gridWidth; i++){
+		var heights = generate2DPerlinNoise(heightSeed, width, height, heightHarmonics);
+		var cells = [];
+		for(var i = 0; i < width; i++){
 			var cellsColumn = [];
-			this.cells.push(cellsColumn);
-			for(var j = 0; j < this.gridHeight; j++){
+			cells.push(cellsColumn);
+			for(var j = 0; j < height; j++){
 				cellsColumn.push({height: heights[i][j], type: 1});
 			}		
 		}
 		//generate a river
 		var riverSeed = 13;
-		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed);
-		this.generateRiver(Math.floor(pseudoRandomGenerator.generate()*this.gridWidth), Math.floor(pseudoRandomGenerator.generate()*this.gridHeight));
+		var floodLevel = cellSize/5;
+		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed, floodLevel);
+		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
+		return new Terrain(cellSize,cells, width, height);
+	}
 
+	/**
+	 * private method to generate the water (put in another method to improve readability)
+	 * @param  {Cell[][]} cells a 2D array of cells where to create the water.
+	 * @param  {int} i current X coordinate of the cell.
+	 * @param  {int} j current Y coordinate of the cell.
+	 * @param  {float} floodLevel height from the lowest river-cell until which the water flooding happens.
+	 * @return {None}
+	 */
+	generateWater(cells, i, j, floodLevel){
+		cells[i][j].type = 2;
+		var maxHeight = cells[i][j].height;
+		var direction = 0;
+		var newI = i;
+		var newJ = j;
+		if(i <99 && maxHeight < cells[i+1][j].height){
+			maxHeight = cells[i+1][j].height;
+			newI = i+1;
+		} 
+		if(i > 0 && maxHeight < cells[i-1][j].height){
+			maxHeight = cells[i-1][j].height;
+			newI = i-1;
+		}
+		if(j < 99 && maxHeight < cells[i][j+1].height){
+			maxHeight = cells[i][j+1].height;
+			newI = i;
+			newJ = j+1;
+		} 
+		if(j > 0 && maxHeight < cells[i][j-1].height){
+			maxHeight = cells[i][j-1].height;
+			newI = i;
+			newJ = j-1;
+		}
+		if(newI != i || newJ != j){
+			this.generateWater(cells, newI, newJ, floodLevel);
+		} else {
+			var floodMaxHeight = maxHeight - floodLevel;
+			this.flood(cells, i, j, floodMaxHeight);
+		}
+	}
+
+	flood(cells, i, j, maxHeight){
+		if(cells[i][j].type != 3){
+			cells[i][j].type = 3;
+			cells[i][j].height = maxHeight;
+			if(i <99 && maxHeight < cells[i+1][j].height){
+				this.flood(cells, i+1, j, maxHeight);
+			} 
+			if(i > 0 && maxHeight < cells[i-1][j].height){
+				this.flood(cells, i-1, j, maxHeight);
+			}
+			if(j < 99 && maxHeight < cells[i][j+1].height){
+				this.flood(cells, i, j+1, maxHeight);
+			} 
+			if(j > 0 && maxHeight < cells[i][j-1].height){
+				this.flood(cells, i, j-1, maxHeight);
+			}
+		}
+	}
+}
+
+/**
+ * Generate the geometries (to be rendered) for a terrain.
+ */
+export class TerrainGeometryGenerator {
+	
+	constructor(){
+		this.voxelColors = {
+			1: {top: [45, 201, 10], side: [161, 68, 18]},//land voxel
+			2: {top: [5, 20, 237], side: [5, 20, 237]},//water-river voxel
+			3: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
+		};
+	}
+
+	/**
+	 * generate the terrain's voxel geometries from the terrain cells's properties
+	 * @param  {Terrain} terrain The terrain to generate the geometries for.
+	 * @return {Object} The terrain's geometries
+	 */
+	generate(terrain){
+		var vertexes = [];
+		var colors = [];
+		var normals = [];
 		//generate the geometry for the terrain.
-		////TODO: generate the voxel in another class or method
-		for(var i = 0; i <this.gridWidth; i++){
-			for(var j = 0; j <this.gridHeight; j++){
-				var height =this.cells[i][j].height;
-				var color = this.voxelColors[this.cells[i][j].type];
-				var voxel = this.generateVoxelGeometryAndColor(i, height, j, this.voxelSize, color);
+		for(var i = 0; i < terrain.cells.length; i++){
+			for(var j = 0; j < terrain.cells[i].length; j++){
+				var height =terrain.cells[i][j].height;
+				var color = this.voxelColors[terrain.cells[i][j].type];
+				var voxel = this._generateVoxelGeometryAndColor(i, height, j, terrain.cellSize, color);
 			 	vertexes.push(...voxel.vertexes);
 			 	colors.push(...voxel.colors);
 			 	normals.push(...voxel.normals);
 			}
 		}
-		this.vertexes = new Float32Array(vertexes);
-		this.colors = new Uint8Array(colors);
-		this.normals = new Float32Array(normals);
-	}
-
-	generateRiver(i, j){
-		this.cells[i][j].type = 2;
-		var maxHeight = this.cells[i][j].height;
-		var direction = 0;
-		var newI = i;
-		var newJ = j;
-		if(i <99 && maxHeight < this.cells[i+1][j].height){
-			maxHeight = this.cells[i+1][j].height;
-			newI = i+1;
-		} 
-		if(i > 0 && maxHeight < this.cells[i-1][j].height){
-			maxHeight = this.cells[i-1][j].height;
-			newI = i-1;
-		}
-		if(j < 99 && maxHeight < this.cells[i][j+1].height){
-			maxHeight = this.cells[i][j+1].height;
-			newI = i;
-			newJ = j+1;
-		} 
-		if(j > 0 && maxHeight < this.cells[i][j-1].height){
-			maxHeight = this.cells[i][j-1].height;
-			newI = i;
-			newJ = j-1;
-		}
-		if(newI != i || newJ != j){
-			this.generateRiver(newI, newJ);
-		} else {
-			var floodMaxHeight = maxHeight - (this.voxelSize/5);
-			this.flood(i, j, floodMaxHeight);
+		return {
+			vertexes : new Float32Array(vertexes),
+			colors : new Uint8Array(colors),
+			normals : new Float32Array(normals),
 		}
 	}
 
-	flood(i, j, maxHeight){
-		if(this.cells[i][j].type != 3){
-			this.cells[i][j].type = 3;
-			this.cells[i][j].height = maxHeight;
-			if(i <99 && maxHeight < this.cells[i+1][j].height){
-				this.flood(i+1, j, maxHeight);
-			} 
-			if(i > 0 && maxHeight < this.cells[i-1][j].height){
-				this.flood(i-1, j, maxHeight);
-			}
-			if(j < 99 && maxHeight < this.cells[i][j+1].height){
-				this.flood(i, j+1, maxHeight);
-			} 
-			if(j > 0 && maxHeight < this.cells[i][j-1].height){
-				this.flood(i, j-1, maxHeight);
-			}
-		}
-	}
-
-	generateVoxelGeometryAndColor(x, y, z, voxelSize, voxelColors){
+	_generateVoxelGeometryAndColor(x, y, z, voxelSize, voxelColors){
 		var startX = x * voxelSize;
 		var startZ = z * voxelSize;
 		var startY = y;
@@ -344,5 +403,83 @@ class LinearCongruentialGenerator{
 		this.current = (this.multiplier*this.current + this.increment) % this.modulus;
 		return this.current/this.modulus;
 	}
+}
 
+
+
+/**
+ * A simple tree generator
+ */
+export class Tree{
+	constructor(){
+		this.cells = [];
+		this.voxelSize = 20;
+		this.gridWidth = 100;
+		this.gridHeight = 100;
+		this.voxelColors = {
+			1: {top: [45, 201, 10], side: [161, 68, 18]},//land voxel
+			2: {top: [5, 20, 237], side: [5, 20, 237]},//water-river voxel
+			3: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
+		};
+		this.generate();	
+	}
+
+	generate(){
+		//generate the terrain cells with their heights
+		var vertexes = [];
+		var colors = [];
+		var normals = [];
+		//trunc
+		vertexes.push(
+			0,0,0,
+			0,-20,0,
+			0,10,0,
+			10,-20,0,
+			0,-20,0,
+			10,0,0,
+		);
+		colors.push(
+			161, 68, 18,
+			161, 68, 18,
+			161, 68, 18,
+			161, 68, 18,
+			161, 68, 18,
+			161, 68, 18,
+		);
+		//leafs
+		vertexes.push(
+			50,-20,0,
+			0,-20,0,
+			0,-30,0,
+			0,-30,0,
+			0,-20,0,
+			-25,-20,0,
+		);
+		colors.push(
+			5, 20, 237,
+			5, 20, 237,
+			5, 20, 237,
+			5, 20, 237,
+			5, 20, 237,
+			5, 20, 237,
+		);
+		normals.push(
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+			0, 0, 1,
+		);
+
+		this.vertexes = new Float32Array(vertexes);
+		this.colors = new Uint8Array(colors);
+		this.normals = new Float32Array(normals);
+	}
 }

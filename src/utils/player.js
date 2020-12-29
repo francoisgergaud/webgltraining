@@ -1,3 +1,8 @@
+/**
+ * the player:
+ * - control the cmera view. 
+ * - movement ae limited by the terrain. 
+ */
 export class Player {
 
 	constructor(camera, terrain){
@@ -44,10 +49,9 @@ export class Player {
 		this.position.z += (this.animationParameters.velocity * deltaTimeSecond) * Math.cos(this.rotation.y * Math.PI / 180);
 	    this.position.x += (this.animationParameters.velocity * deltaTimeSecond) * Math.sin(this.rotation.y * Math.PI / 180);
 		//set the height depending on the terrain
-		if(this.position.x > 0 && this.position.x < this.terrain.gridWidth*this.terrain.voxelSize
-			&& -this.position.z > 0 && -this.position.z < this.terrain.gridHeight*this.terrain.voxelSize) {
-			var cellHeight = this.terrain.cells[Math.floor(this.position.x/this.terrain.voxelSize)][Math.floor(-this.position.z/this.terrain.voxelSize)].height;
-			this.targetPositionY = cellHeight-this.terrain.voxelSize;
+		var cell = this.terrain.getCell(this.position.x, -this.position.z);
+		if(cell != null) {
+			this.targetPositionY = cell.height - this.terrain.cellSize;
 			//this.position.y = cellHeight-this.terrain.voxelSize;
 		}
 		//smooth the vertical movement

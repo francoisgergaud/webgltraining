@@ -4,7 +4,7 @@ import {m4} from './utils/matrix.js';
 /**
  * A model with an update method and some velocity parameters to animate it.
  */
-export class animatedModel {
+export class AnimatedModel {
 
   constructor(id, programInfo, vertexes, textureCoordinates){
     this.id = id;
@@ -117,7 +117,7 @@ export class animatedModel {
   }
 }
 
-export class programInfo {
+export class ProgramInfo {
   constructor(gl, vertexShaderSource, fragmentShaderSource, attributeNames, uniformNames){
     this.gl = gl;
     var vertexShader = this.createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -163,7 +163,7 @@ export class programInfo {
   }
 }
 
-export class modelFactory {
+export class ModelFactory {
 
   constructor(colorProgram, textureProgram){
     this.colorProgram = colorProgram;
@@ -171,7 +171,7 @@ export class modelFactory {
   }
 
   createAnimatedModelTextured(id, vertexes, textureCoordinates){
-    var model = new animatedModel(id, this.textureProgram, vertexes);
+    var model = new AnimatedModel(id, this.textureProgram, vertexes);
     // Create a buffer to put texture coordinate in
     var gl = this.textureProgram.gl;
     var textureBuffer = gl.createBuffer();
@@ -189,7 +189,7 @@ export class modelFactory {
   }
 
   createAnimatedModelColored(id, vertexes, colors, normals){
-    var model = new animatedModel(id, this.colorProgram, vertexes);
+    var model = new AnimatedModel(id, this.colorProgram, vertexes);
     // Create a buffer to put texture coordinate in
     var gl = this.colorProgram.gl;
     var colorBuffer = gl.createBuffer();
