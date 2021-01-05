@@ -13,7 +13,8 @@ import {LookAtCamera} from './utils/camera.js';
 import {InputController} from './utils/inputController.js';
 import {ModelFactory, ProgramInfo} from './model.js';
 import {model, textureCoordinates} from './geometries.js';
-import {TerrainFactory, Terrain, TerrainGeometryGenerator, Tree} from './utils/terrainGenerator.js';
+import {TerrainFactory, Terrain, TerrainGeometryGenerator} from './utils/terrainGenerator.js';
+import {TreeGenerator, TreeGeometryGenerator, ForestGenerator} from './utils/treeGenerator.js';
 import {Player} from './utils/player.js';
 
 class App extends React.Component {
@@ -129,22 +130,34 @@ class App extends React.Component {
     var terrainModel = factory.createAnimatedModelColored('id3', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
     
     //generate a tree
-    //this.tree = new Tree();
-    //var treeModel = factory.createAnimatedModelColored('id4', this.tree.vertexes, this.tree.colors, this.tree.normals);
-    //treeModel.position = {x:50, y:50, z: this.terrain.cells[Math.floor(50/this.terrain.cellSize)][Math.floor(50/this.terrain.cellSize)].height - this.terrain.cellSize};
+    var treeGenerator = new TreeGenerator();
+    var tree = treeGenerator.generate();
+    var treeGeometryGenerator = new TreeGeometryGenerator();
+    var treeGeometry = treeGeometryGenerator.generate(tree);
+    var treeModel = factory.createAnimatedModelColored('id4', treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
+    treeModel.position = {x: 50, y: -this.terrain.getCell(50, 50).height, z: -50};//TODO: review the coordinate system. don´t understand why z is iverted (probably because the model is flipped Pi Rad aroung the X axis)
     
+    var forestSeed = 1;
+    var forestGenerator = new ForestGenerator(forestSeed, factory);
+    var trees = forestGenerator.generate(this.terrain, 100);
+
+    var models = {...trees};
+    models['id1'] = animatedElement1;
+    models['id2'] = terrainModel;
+
     //set the camera
     var camera = new LookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180);
     camera.rotation.y = 0;
     var player = new Player(camera, this.terrain);
     this.setState({
       graphicContext : graphicContext,
-      models : {'id1': animatedElement1, 'id3': terrainModel},
+      models : models,
       selectedModel : 'id1',
       player : player,
       camera: camera,
-      lightDirection: [0.5, -1.0, 0.5],
+      lightDirection: [-0.5, -1.0, 0.5],
     });
+
     new InputController(canvas, player);
   }
   
@@ -174,7 +187,7 @@ class App extends React.Component {
     var gl = this.state.graphicContext.glContext;
     // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, this.state.graphicContext.width, this.state.graphicContext.height);
-    gl.clearColor(176/256, 245/256, 255/256, 1.0);
+    gl.clearColor(135/256, 206/256, 235/256, 1.0);
     // Clear the canvas AND the depth buffer.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.CULL_FACE);

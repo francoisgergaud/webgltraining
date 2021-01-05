@@ -31,6 +31,7 @@ var m4 = {
 
   projection: function(width, height, depth) {
     // Note: This matrix flips the Y axis so 0 is at the top.
+    // TODO: rework this matrix so that Y is not inverted anymore
     return [
        2 / width, 0, 0, 0,
        0, -2 / height, 0, 0,
@@ -89,6 +90,35 @@ var m4 = {
       b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
       b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
       b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33,
+    ];
+  },
+
+  multiply1D: function(a, b) {
+    var a00 = a[0 * 4 + 0];
+    var a01 = a[0 * 4 + 1];
+    var a02 = a[0 * 4 + 2];
+    var a03 = a[0 * 4 + 3];
+    var a10 = a[1 * 4 + 0];
+    var a11 = a[1 * 4 + 1];
+    var a12 = a[1 * 4 + 2];
+    var a13 = a[1 * 4 + 3];
+    var a20 = a[2 * 4 + 0];
+    var a21 = a[2 * 4 + 1];
+    var a22 = a[2 * 4 + 2];
+    var a23 = a[2 * 4 + 3];
+    var a30 = a[3 * 4 + 0];
+    var a31 = a[3 * 4 + 1];
+    var a32 = a[3 * 4 + 2];
+    var a33 = a[3 * 4 + 3];
+    var b00 = b[0 * 4 + 0];
+    var b01 = b[0 * 4 + 1];
+    var b02 = b[0 * 4 + 2];
+    var b03 = b[0 * 4 + 3];
+    return [
+      b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30,
+      b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31,
+      b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32,
+      b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
     ];
   },
 
@@ -282,9 +312,11 @@ var m4 = {
             a[0] * b[1] - a[1] * b[0]];
   },
 
+  surfaceNormal: function(a, b, c) {
+    return m4.cross(m4.subtractVectors(a,b), m4.subtractVectors(b,c));
+    //return m4.cross(m4.subtractVectors(b,c), m4.subtractVectors(a,b));
+  },
+
 };
-
-
-
 
 export {m4};
