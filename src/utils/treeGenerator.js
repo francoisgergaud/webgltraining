@@ -80,7 +80,6 @@ export class TreeGeometryGenerator {
 		//console.log("vertex3: [" + vertex3[0] + ", " + vertex3[1] + ", " + vertex3[2] + "]");		
 		var normal1 = m4.surfaceNormal(vertex1, vertex2, vertex3);
 		geometry.normals.push(...normal1, ...normal1, ...normal1);
-
 		var vertex4 = m4.multiply1D(matrix, [node.width/2, 0, 0, 1]);
 		geometry.vertexes.push(vertex4[0], vertex4[1], vertex4[2]);
 		geometry.colors.push(112, 65, 2);

@@ -127,15 +127,7 @@ class App extends React.Component {
     this.terrain = terrainFactory.generate(20, 100, 100);
     var terrainGeometryGenerator = new TerrainGeometryGenerator();
     var terrainGeometry = terrainGeometryGenerator.generate(this.terrain);
-    var terrainModel = factory.createAnimatedModelColored('id3', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
-    
-    //generate a tree
-    // var treeGenerator = new TreeGenerator();
-    // var tree = treeGenerator.generateRandom();
-    // var treeGeometryGenerator = new TreeGeometryGenerator();
-    // var treeGeometry = treeGeometryGenerator.generate(tree);
-    // var treeModel = factory.createAnimatedModelColored('id4', treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
-    // treeModel.position = {x: 50, y: -this.terrain.getCell(50, 50).height, z: -50};//TODO: review the coordinate system. don´t understand why z is iverted (probably because the model is flipped Pi Rad aroung the X axis)
+    var terrainModel = factory.createAnimatedModelColored('id2', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
     
     var forestSeed = 1;
     var forestGenerator = new ForestGenerator(forestSeed, factory);

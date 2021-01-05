@@ -60,7 +60,7 @@ export class TerrainFactory {
 		}
 		//generate a river
 		var riverSeed = 1;
-		var floodLevel = cellSize;
+		var floodLevel = cellSize/2;
 		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed, floodLevel);
 		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
 		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
@@ -350,8 +350,3 @@ export class TerrainGeometryGenerator {
 	    return {vertexes: vertexes, colors: colors, normals: normals};
 	}
 }
-
-
-
-
-
