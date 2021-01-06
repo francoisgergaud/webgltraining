@@ -88,4 +88,9 @@ export class LinearCongruentialGenerator{
 		this.current = (this.multiplier*this.current + this.increment) % this.modulus;
 		return this.current/this.modulus;
 	}
+
+	generateRange(min, max){
+		this.current = (this.multiplier*this.current + this.increment) % this.modulus;
+		return this.current/this.modulus*(max-min)+min;
+	}
 }

@@ -35,26 +35,24 @@ export class TreeGenerator{
 		return root;
 	}
 
-	generateRandomNode(randomNumberGenerator, length, width, maxNumberOfChildren, reductionFactor, depth){
+	generateRandom(randomNumberGenerator, length, width, xRotation, yRotation, maxNumberOfChildren, reductionFactor, depth){
 		
 		var children = [];
 		var numbrOfChildrenToGenerate = Math.floor(randomNumberGenerator.generate()*maxNumberOfChildren)+1;
 		
 		if(depth > 0){
 			for(var i=0; i < numbrOfChildrenToGenerate; i++){
-				children.push(this.generateNode(randomNumberGenerator, length*reductionFactor, width*reductionFactor, maxNumberOfChildren, reductionFactor, depth-1));
+				var childXRotation = randomNumberGenerator.generateRange(-0.2, 0.2) + xRotation;
+				var childYRotation = randomNumberGenerator.generate(-0.5, 0.5) + yRotation;
+				children.push(this.generateRandom(randomNumberGenerator, length*reductionFactor, width*reductionFactor, childXRotation, childYRotation, maxNumberOfChildren, reductionFactor, depth-1));
 			}
-		}
-
+		}	
 		return {
 			length: length,
 			width: width,
-			var xRotation = randomNumberGenerator.generate()*0.20;
-			var yRotation = randomNumberGenerator.generate()*0.20;
 			value: [xRotation, yRotation, 0],
 			children: children,
 		}
-		return root;
 	}
 }
 
@@ -180,7 +178,9 @@ export class ForestGenerator {
 		var result = {};
 		var treeGenerator = new TreeGenerator();	    
 		for (var cpt=0; cpt < numberOfTrees; cpt++){
-			var tree = treeGenerator.generate();
+			var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;//move the 2^48 as the random-generator property
+			var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
+			var tree = treeGenerator.generateRandom(treeRandomGenerator, 35, 8, 0, 0, 2, 0.5, 1);//treeGenerator.generate();
 			var treeId = 'tree' + cpt.toString();
 			var treeGeometry = this.treeGeometryGenerator.generate(tree);
 			var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
