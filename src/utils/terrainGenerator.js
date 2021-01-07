@@ -1,4 +1,5 @@
 import {interpolate, generate2DPerlinNoise, LinearCongruentialGenerator} from './randomUtils.js';
+import {m4} from './matrix.js';
 
 /**
  * The terrain contains the logic data for the terrain. A terrain can be seen as 2D array of cells.
@@ -150,14 +151,23 @@ export class TerrainGeometryGenerator {
 		var colors = [];
 		var normals = [];
 		//generate the geometry for the terrain.
-		for(var i = 0; i < terrain.cells.length; i++){
-			for(var j = 0; j < terrain.cells[i].length; j++){
-				var height =terrain.cells[i][j].height;
-				var color = this.voxelColors[terrain.cells[i][j].type];
-				var voxel = this._generateVoxelGeometryAndColor(i, height, j, terrain.cellSize, color);
-			 	vertexes.push(...voxel.vertexes);
-			 	colors.push(...voxel.colors);
-			 	normals.push(...voxel.normals);
+		for(var i = 0; i < terrain.cells.length-1; i++){
+			for(var j = 0; j < terrain.cells[i].length-1; j++){
+				// var height =terrain.cells[i][j].height;
+				// var color = this.voxelColors[terrain.cells[i][j].type];
+				// var voxel = this._generateVoxelGeometryAndColor(i, height, j, terrain.cellSize, color);
+			 // 	vertexes.push(...voxel.vertexes);
+			 // 	colors.push(...voxel.colors);
+			 // 	normals.push(...voxel.normals);
+			 var color = this.voxelColors[terrain.cells[i][j].type].top;
+			 var heightTopLeft =  terrain.cells[i][j].height;
+			 var heightTopRight = terrain.cells[i+1][j].height;
+			 var heightBottomLeft = terrain.cells[i][j+1].height;
+			 var heightBottomRight = terrain.cells[i+1][j+1].height;
+			 var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color);
+			 vertexes.push(...triangles.vertexes);
+			 colors.push(...triangles.colors);
+			 normals.push(...triangles.normals);
 			}
 		}
 		return {
@@ -165,6 +175,28 @@ export class TerrainGeometryGenerator {
 			colors : new Uint8Array(colors),
 			normals : new Float32Array(normals),
 		}
+	}
+
+	_generateTriangleGeometryAndColor(x, z, cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color){
+		var vertexes = [];
+		var colors = [];
+		var normals = [];
+		var startX = x * cellSize;
+		var startZ = z * cellSize;
+		var endX = startX + cellSize;
+		var endZ = startZ + cellSize;
+		var vertex1 = [endX, heightBottomRight, endZ];
+		var vertex2 = [startX, heightBottomLeft, endZ];
+		var vertex3 = [startX, heightTopLeft, startZ];
+		var vertex4 = [endX, heightTopRight, startZ];
+		vertexes.push(...vertex1, ...vertex2, ...vertex3);
+		var normal1 = m4.surfaceNormal(vertex2, vertex1, vertex3);
+		normals.push(...normal1, ...normal1, ...normal1);
+		vertexes.push(...vertex3, ...vertex4, ...vertex1);
+		var normal2 = m4.surfaceNormal(vertex4, vertex3, vertex1);
+		normals.push(...normal2, ...normal2, ...normal2);
+		colors.push(...color, ...color, ...color, ...color, ...color, ...color);
+		return {vertexes: vertexes, colors: colors, normals: normals};
 	}
 
 	_generateVoxelGeometryAndColor(x, y, z, voxelSize, voxelColors){
