@@ -8,10 +8,13 @@ export class Player {
 	constructor(camera, terrain){
 		this.camera = camera;
 		this.terrain = terrain;
+		var xPosition = (terrain.gridWidth/2) * terrain.cellSize;
+		var zPosition = (terrain.gridHeight/2) * terrain.cellSize;
+		var yPosition = this.terrain.getCell(xPosition, zPosition).height + terrain.cellSize;
 		this.position = {
-			x: 0,
-			y: 0,
-			z: 0,
+			x: xPosition,
+			y: yPosition,
+			z: zPosition,
 	    };
 		this.rotation = {
 			x: 0,
@@ -46,12 +49,15 @@ export class Player {
 			this.rotation.z += 360;
 		}
 		this.camera.setRotation(this.rotation.x, this.rotation.y, this.rotation.z);
-		this.position.z += (this.animationParameters.velocity * deltaTimeSecond) * Math.cos(this.rotation.y * Math.PI / 180);
-	    this.position.x += (this.animationParameters.velocity * deltaTimeSecond) * Math.sin(this.rotation.y * Math.PI / 180);
+		// when camera rotation is 0, it points to the -Z axis, not the X+ axis
+		var offsetZ = (-this.animationParameters.velocity * deltaTimeSecond) * Math.cos(this.rotation.y * Math.PI / 180);
+		var offsetX = (-this.animationParameters.velocity * deltaTimeSecond) * Math.sin(this.rotation.y * Math.PI / 180);
+		this.position.z += offsetZ;
+	    this.position.x += offsetX;
 		//set the height depending on the terrain
-		var cell = this.terrain.getCell(this.position.x, -this.position.z);
+		var cell = this.terrain.getCell(this.position.x, this.position.z);
 		if(cell != null) {
-			this.targetPositionY = cell.height - this.terrain.cellSize;
+			this.targetPositionY = cell.height + this.terrain.cellSize;
 			//this.position.y = cellHeight-this.terrain.voxelSize;
 		}
 		//smooth the vertical movement
@@ -69,6 +75,6 @@ export class Player {
 			}
 		}
 		//the y axis is inverted for the camera
-		this.camera.setPosition(this.position.x, -this.position.y, this.position.z);
+		this.camera.setPosition(this.position.x, this.position.y, this.position.z);
 	}
 }

@@ -16,7 +16,7 @@ export class AnimatedModel {
       z: 0,
     };
     this.rotation = {
-      x: 180, //the model coordinates are upside-down regarding the 3D referential. Need to revert it
+      x: 0,
       y: 0,
       z: 0,
     };

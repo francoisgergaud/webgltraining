@@ -56,7 +56,7 @@ export function generateIcosahedron(translation, scaleFactor){
 		for(var j=0, m=faces[i].length; j<m; j++) {
 			geometry.vertexes.push(
 				(faces[i][j][0]*scaleFactor)+translation[0],
-				(faces[i][j][1]*scaleFactor)+-translation[1],
+				(faces[i][j][1]*scaleFactor)+translation[1],
 				(faces[i][j][2]*scaleFactor)+translation[2]
 			);
 		}

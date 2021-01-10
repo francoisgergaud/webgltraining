@@ -130,19 +130,19 @@ class App extends React.Component {
     var terrainModel = factory.createAnimatedModelColored('id3', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
     
     //generate a tree
-    var treeGenerator = new TreeGenerator();
-    var tree = treeGenerator.generate();
-    var treeGeometryGenerator = new TreeGeometryGenerator();
-    var treeGeometry = treeGeometryGenerator.generate(tree);
-    var treeModel = factory.createAnimatedModelColored('id4', treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
-    treeModel.position = {x: 50, y: -this.terrain.getCell(50, 50).height, z: -50};//TODO: review the coordinate system. don´t understand why z is iverted (probably because the model is flipped Pi Rad aroung the X axis)
+    // var treeGenerator = new TreeGenerator();
+    // var tree = treeGenerator.generateRandom();
+    // var treeGeometryGenerator = new TreeGeometryGenerator();
+    // var treeGeometry = treeGeometryGenerator.generate(tree);
+    // var treeModel = factory.createAnimatedModelColored('id4', treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
+    // treeModel.position = {x: 50, y: -this.terrain.getCell(50, 50).height, z: -50};//TODO: review the coordinate system. don´t understand why z is iverted (probably because the model is flipped Pi Rad aroung the X axis)
     
     var forestSeed = 1;
     var forestGenerator = new ForestGenerator(forestSeed, factory);
     var trees = forestGenerator.generate(this.terrain, 100);
 
     var models = {...trees};
-    models['id1'] = animatedElement1;
+    //models['id1'] = animatedElement1;
     models['id2'] = terrainModel;
 
     //set the camera
@@ -152,7 +152,7 @@ class App extends React.Component {
     this.setState({
       graphicContext : graphicContext,
       models : models,
-      selectedModel : 'id1',
+      selectedModel : 'id2',
       player : player,
       camera: camera,
       lightDirection: [-0.5, -1.0, 0.5],
@@ -193,7 +193,7 @@ class App extends React.Component {
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     //lookup camera
-    // var selectedModel = this.state.models[this.state.selectedModel];
+    //var selectedModel = this.state.models[this.state.selectedModel];
     // var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];
     // this.state.camera.setTarget(cameraTarget);
     var viewProjectionMatrix = this.state.camera.getViewProjectionMatrix();

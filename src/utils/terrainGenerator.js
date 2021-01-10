@@ -60,7 +60,7 @@ export class TerrainFactory {
 		}
 		//generate a river
 		var riverSeed = 1;
-		var floodLevel = cellSize/2;
+		var floodLevel = cellSize;
 		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed, floodLevel);
 		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
 		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
@@ -78,51 +78,54 @@ export class TerrainFactory {
 	 */
 	generateWater(cells, i, j, floodLevel){
 		cells[i][j].type = 2;
-		var maxHeight = cells[i][j].height;
+		var minHeight = cells[i][j].height;
 		var direction = 0;
 		var newI = i;
 		var newJ = j;
-		if(i <99 && maxHeight < cells[i+1][j].height){
-			maxHeight = cells[i+1][j].height;
+		if(i <99 && minHeight > cells[i+1][j].height){
+			minHeight = cells[i+1][j].height;
 			newI = i+1;
 		} 
-		if(i > 0 && maxHeight < cells[i-1][j].height){
-			maxHeight = cells[i-1][j].height;
+		if(i > 0 && minHeight > cells[i-1][j].height){
+			minHeight = cells[i-1][j].height;
 			newI = i-1;
 		}
-		if(j < 99 && maxHeight < cells[i][j+1].height){
-			maxHeight = cells[i][j+1].height;
+		if(j < 99 && minHeight > cells[i][j+1].height){
+			minHeight = cells[i][j+1].height;
 			newI = i;
 			newJ = j+1;
 		} 
-		if(j > 0 && maxHeight < cells[i][j-1].height){
-			maxHeight = cells[i][j-1].height;
+		if(j > 0 && minHeight > cells[i][j-1].height){
+			minHeight = cells[i][j-1].height;
 			newI = i;
 			newJ = j-1;
 		}
 		if(newI != i || newJ != j){
 			this.generateWater(cells, newI, newJ, floodLevel);
 		} else {
-			var floodMaxHeight = maxHeight - floodLevel;
-			this.flood(cells, i, j, floodMaxHeight);
+			var floodHeight = minHeight + floodLevel;
+			this.flood(cells, i, j, floodHeight);
 		}
 	}
 
-	flood(cells, i, j, maxHeight){
+	flood(cells, i, j, height){
 		if(cells[i][j].type != 3){
 			cells[i][j].type = 3;
-			cells[i][j].height = maxHeight;
-			if(i <99 && maxHeight < cells[i+1][j].height){
-				this.flood(cells, i+1, j, maxHeight);
+			cells[i][j].height = height;
+			cells[i+1][j].height = height;
+			cells[i][j+1].height = height;
+			cells[i+1][j+1].height = height;
+			if(i <99 && height > cells[i+1][j].height){
+				this.flood(cells, i+1, j, height);
 			} 
-			if(i > 0 && maxHeight < cells[i-1][j].height){
-				this.flood(cells, i-1, j, maxHeight);
+			if(i > 0 && height > cells[i-1][j].height){
+				this.flood(cells, i-1, j, height);
 			}
-			if(j < 99 && maxHeight < cells[i][j+1].height){
-				this.flood(cells, i, j+1, maxHeight);
+			if(j < 99 && height > cells[i][j+1].height){
+				this.flood(cells, i, j+1, height);
 			} 
-			if(j > 0 && maxHeight < cells[i][j-1].height){
-				this.flood(cells, i, j-1, maxHeight);
+			if(j > 0 && height > cells[i][j-1].height){
+				this.flood(cells, i, j-1, height);
 			}
 		}
 	}
@@ -190,10 +193,10 @@ export class TerrainGeometryGenerator {
 		var vertex3 = [startX, heightTopLeft, startZ];
 		var vertex4 = [endX, heightTopRight, startZ];
 		vertexes.push(...vertex1, ...vertex2, ...vertex3);
-		var normal1 = m4.surfaceNormal(vertex2, vertex1, vertex3);
+		var normal1 = m4.surfaceNormal(vertex1, vertex2, vertex3);
 		normals.push(...normal1, ...normal1, ...normal1);
 		vertexes.push(...vertex3, ...vertex4, ...vertex1);
-		var normal2 = m4.surfaceNormal(vertex4, vertex3, vertex1);
+		var normal2 = m4.surfaceNormal(vertex3, vertex4, vertex1);
 		normals.push(...normal2, ...normal2, ...normal2);
 		colors.push(...color, ...color, ...color, ...color, ...color, ...color);
 		return {vertexes: vertexes, colors: colors, normals: normals};

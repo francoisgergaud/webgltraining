@@ -4,10 +4,10 @@ export class InputController {
 		window.addEventListener('keydown', (e) => {
 			if (!e.repeat) {
 				switch(e.key) {
-					case "ArrowUp": player.animationParameters.velocity = -150; break;
-					case "ArrowDown": player.animationParameters.velocity = 150; break;
-					case "ArrowRight": player.animationParameters.rotate.y = -60; break;
-					case "ArrowLeft": player.animationParameters.rotate.y = 60; break;
+					case "ArrowUp": player.animationParameters.velocity = 150; break;
+					case "ArrowDown": player.animationParameters.velocity = -150; break;
+					case "ArrowRight": player.animationParameters.rotate.y = 60; break;
+					case "ArrowLeft": player.animationParameters.rotate.y = -60; break;
 					default: break;
 				}
 			}
