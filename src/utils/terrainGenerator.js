@@ -49,7 +49,8 @@ export class TerrainFactory {
 			[40, cellSize*10]
 		]);
 		var heightSeed= 1;
-		var heights = generate2DPerlinNoise(heightSeed, width, height, heightHarmonics);
+		var perlinNoise = generate2DPerlinNoise(heightSeed, width, height, heightHarmonics);
+		var heights = perlinNoise.value;
 		var cells = [];
 		for(var i = 0; i < width; i++){
 			var cellsColumn = [];

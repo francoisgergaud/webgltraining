@@ -13,6 +13,14 @@ export function interpolate(a0, a1, w) {
 }
 
 
+/**
+ * generate Perlin noise in 2D
+ * @param  {integer} seed      The seed used by the pseudo-random generator
+ * @param  {integer} width     Width of the 2D array to generate Perlin noise for.
+ * @param  {ineteger} height    Height of the 2D array to generate Perlin noise for.
+ * @param  {[integer, number]} harmonics the offset and amplitude of the haemonique
+ * @return {number[][]} a 2D array of the Perlin noise coefficients    
+ */
 export function generate2DPerlinNoise(seed, width, height, harmonics){
 	var lgGenerator = new LinearCongruentialGenerator(seed);
 	var harmonicNoise = new Map();
@@ -30,16 +38,16 @@ export function generate2DPerlinNoise(seed, width, height, harmonics){
 		harmonicNoise.set(offset, factors);
 	}
 	//interpolate all the cells
-	var result = [];
+	var result = {value: [], min: Infinity, max: -Infinity};
 	var firstLoop = true;
 	for (var [offset, factors] of harmonicNoise) {
 		for(var i = 0; i < width; i++){
 			var resultColumn = null;
 			if(firstLoop) {
 				resultColumn = [];
-				result.push(resultColumn);
+				result.value.push(resultColumn);
 			} else {
-				resultColumn = result[i];
+				resultColumn = result.value[i];
 			}
 			for(var j = 0; j < height; j++){
 				var left = Math.floor(i/offset);
@@ -66,7 +74,13 @@ export function generate2DPerlinNoise(seed, width, height, harmonics){
 			    	resultColumn.push(value);
 			   	} else {
 			   		resultColumn[j] += value;
-			   	} 
+			   	}
+			   	if(value > result.max) {
+			   		result.max = value;
+			   	} else if (value < result.min) {
+			   		result.min = value;
+			   	}
+
 			}
 		}
 		firstLoop = false;

@@ -4,10 +4,12 @@ import {m4} from './matrix.js';
 /**
  * generate a Icosahedron, scale by 'scale-factor', at the position 'translation'
  * @param  {[number]} translation a 3D vector (tha is an array with 3 scalars)
+ * @param  {[number]} xRadian scalar value: the rotation along X axis applied before translation
+ * @param  {[number]} yRadian scalar value: the rotation along Y axis applied before translation
  * @param  {number} scaleFactor a scalar
  * @return {[number]} the vertices coordinates
  */
-export function generateIcosahedron(translation, scaleFactor){
+export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor){
 	var geometry =  {
 		vertexes: [],
 		colors: [],
@@ -52,12 +54,15 @@ export function generateIcosahedron(translation, scaleFactor){
 		[vertexes[9], vertexes[8], vertexes[1]]//faces.Add(new TriangleIndices(9, 8, 1));
 
 	];
+	var matrix = m4.xRotation(xRadian);
+	matrix = m4.yRotate(matrix, yRadian);
 	for (var i=0, l=faces.length; i<l; i++) {
 		for(var j=0, m=faces[i].length; j<m; j++) {
+			var vertex = m4.multiply1D(matrix, [faces[i][j][0], faces[i][j][1], faces[i][j][2], 1]);
 			geometry.vertexes.push(
-				(faces[i][j][0]*scaleFactor)+translation[0],
-				(faces[i][j][1]*scaleFactor)+translation[1],
-				(faces[i][j][2]*scaleFactor)+translation[2]
+				(vertex[0]*scaleFactor)+translation[0],
+				(vertex[1]*scaleFactor)+translation[1],
+				(vertex[2]*scaleFactor)+translation[2]
 			);
 		}
 	}

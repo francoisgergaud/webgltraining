@@ -1,6 +1,6 @@
 import {m4} from './matrix.js';
 import {generateIcosahedron} from './icosphereGenerator.js';
-import {LinearCongruentialGenerator} from './randomUtils.js';
+import {LinearCongruentialGenerator, generate2DPerlinNoise} from './randomUtils.js';
 
 /**
  * A simple tree generator
@@ -38,12 +38,13 @@ export class TreeGenerator{
 	generateRandom(randomNumberGenerator, length, width, xRotation, yRotation, maxNumberOfChildren, reductionFactor, depth){
 		
 		var children = [];
-		var numbrOfChildrenToGenerate = Math.floor(randomNumberGenerator.generate()*maxNumberOfChildren)+1;
+		var numberOfChildrenToGenerate = Math.floor(randomNumberGenerator.generate()*maxNumberOfChildren)+1;
 		
 		if(depth > 0){
-			for(var i=0; i < numbrOfChildrenToGenerate; i++){
+			for(var i=0; i < numberOfChildrenToGenerate; i++){
 				var childXRotation = randomNumberGenerator.generateRange(-0.2, 0.2) + xRotation;
 				var childYRotation = randomNumberGenerator.generate(-0.5, 0.5) + yRotation;
+				var branchLength = length*reductionFactor - randomNumberGenerator.generate(0, length*reductionFactor) +1;
 				children.push(this.generateRandom(randomNumberGenerator, length*reductionFactor, width*reductionFactor, childXRotation, childYRotation, maxNumberOfChildren, reductionFactor, depth-1));
 			}
 		}	
@@ -58,8 +59,8 @@ export class TreeGenerator{
 
 export class TreeGeometryGenerator {
 	
-	generateNode(node, geometry, origin){
-		console.log("origin:" + origin + ", length: " + node.size);
+	generateNode(node, geometry, origin, randomGenerator){
+		//console.log("origin:" + origin + ", length: " + node.size);
 
 		var matrix = m4.translation(origin[0], origin[1], origin[2]);
 		matrix = m4.xRotate(matrix, node.value[0]*Math.PI*2);
@@ -107,56 +108,33 @@ export class TreeGeometryGenerator {
 
 		if(node.children != null){
 			for(var i=0; i<node.children.length; i++){
-				this.generateNode(node.children[i], geometry, vertex3);
+				this.generateNode(node.children[i], geometry, vertex3, randomGenerator);
 			}
 		}
 		//draw the leaf
-		var leaf = generateIcosahedron(vertex3, node.width*1.5);
+		var xRadian = randomGenerator.generateRange(0,1) * Math.PI*2;
+		var yRadian = randomGenerator.generateRange(0,1) * Math.PI*2;
+		var leaf = generateIcosahedron(vertex3, xRadian, yRadian, node.width*randomGenerator.generateRange(1,2));
 		geometry.vertexes.push(...leaf.vertexes);
 		geometry.colors.push(...leaf.colors);
 		geometry.normals.push(...leaf.normals);
-
-		  //else {
-			//draw a leaf
-			// var leafBranchSizeRatio = 2;
-			// var leafVertex1 = m4.multiply1D(matrix, [0, node.length, -node.width*leafBranchSizeRatio, 1]);
-			// geometry.vertexes.push(leafVertex1[0], -leafVertex1[1], leafVertex1[2]);
-			// geometry.colors.push(32, 250, 80);
-			// var leafVertex2 =m4.multiply1D(matrix, [node.width*leafBranchSizeRatio, node.length, node.width*leafBranchSizeRatio, 1]);
-			// geometry.vertexes.push(leafVertex2[0], -leafVertex2[1], leafVertex2[2]);
-			// geometry.colors.push(32, 250, 80);
-			// var leafVertex3 = m4.multiply1D(matrix, [-node.width*leafBranchSizeRatio, node.length, node.width*leafBranchSizeRatio, 1]);
-			// geometry.vertexes.push(leafVertex3[0], -leafVertex3[1], leafVertex3[2]);
-			// geometry.colors.push(32, 250, 80);
-			
-			// geometry.vertexes.push(leafVertex1[0], -leafVertex1[1], leafVertex1[2]);
-			// geometry.colors.push(32, 250, 80);
-			// geometry.vertexes.push(leafVertex3[0], -leafVertex3[1], leafVertex3[2]);
-			// geometry.colors.push(32, 250, 80);
-			// geometry.vertexes.push(leafVertex2[0], -leafVertex2[1], leafVertex2[2]);
-			// geometry.colors.push(32, 250, 80);
-
-			// var normal1 = m4.surfaceNormal(leafVertex1, leafVertex2, leafVertex3);
-			// var normal2 = m4.surfaceNormal(leafVertex2, leafVertex1 , leafVertex3);
-			// geometry.normals.push(...normal2, ...normal2, ...normal2);
-			// geometry.normals.push(...normal1, ...normal1, ...normal1);
-		//}
 	}
 
 	/**
 	 * generate the tree's geometries from the tree's branches properties
-	 * @param  {Terrain} terrain The terrain to generate the geometries for.
+	 * @param  {root} The tree root node (i.e.: the main trunc).
 	 * @return {Object} The terrain's geometries
 	 */
-	generate(root){
+	generate(root, randomGenerator){
 		//generate the terrain cells with their heights
 		var geometry =  {
 			vertexes: [],
 			colors: [],
 			normals: []
 		};
-		this.generateNode(root, geometry, [0, 0, 0, 0]);
+		this.generateNode(root, geometry, [0, 0, 0, 0], randomGenerator);
 
+		
 		return {
 			vertexes : new Float32Array(geometry.vertexes),
 			colors : new Uint8Array(geometry.colors),
@@ -175,27 +153,46 @@ export class ForestGenerator {
 	
 	generate(terrain, numberOfTrees){
 		var result = {};
-		var treeGenerator = new TreeGenerator();	    
-		for (var cpt=0; cpt < numberOfTrees; cpt++){
-			var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;//move the 2^48 as the random-generator property
-			var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
-			var tree = treeGenerator.generateRandom(treeRandomGenerator, 35, 8, 0, 0, 2, 0.5, 1);//treeGenerator.generate();
-			var treeId = 'tree' + cpt.toString();
-			var treeGeometry = this.treeGeometryGenerator.generate(tree);
-			var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
-	    	var xCoordinate = this.randomNumberGenerator.generate()*terrain.gridWidth*terrain.cellSize;
-			var zCoordinate = this.randomNumberGenerator.generate()*terrain.gridHeight*terrain.cellSize;
-			console.log("generate trees at x: "+xCoordinate +",z: "+zCoordinate);
-			var cells = [
-				terrain.getCell(xCoordinate, zCoordinate),
-				terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate),
-				terrain.getCell(xCoordinate, zCoordinate + terrain.cellSize),
-				terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate + terrain.cellSize)
-			];
-			var yCoordinate = Math.min(...cells.filter(cell => cell != null).map(cell => cell.height));
-			treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
-			result[treeId] = treeModel;
+		var seed = this.randomNumberGenerator.generate();
+		var harmonics = new Map([
+			[terrain.cellSize, 1]
+		]);
+		var perlinNoise = generate2DPerlinNoise(seed, terrain.gridWidth, terrain.gridHeight, harmonics);
+		var treeGenerator = new TreeGenerator();
+		var cpt = 0;
+		var amplitude = perlinNoise.max - perlinNoise.min;
+		var randomFactor = 0.2;
+		for(var i= 0; i < terrain.gridWidth; i++){
+			for(var j= 0; j < terrain.gridHeight; j++){
+				var noiseValue = perlinNoise.value[i][j];
+				var probability = (perlinNoise.max - noiseValue)/amplitude;
+				if(probability < this.randomNumberGenerator.generate() * randomFactor){
+					var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;
+					var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
+					var mainTruncLength = treeRandomGenerator.generateRange(40, 80); 
+					var tree = treeGenerator.generateRandom(treeRandomGenerator, mainTruncLength, 8, 0, 0, 2, 0.5, 1);
+					var treeId = 'tree' + cpt.toString();
+					var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator);
+					var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
+			    	var xCoordinate = i*terrain.cellSize;
+					var zCoordinate = j*terrain.cellSize;
+					//console.log("generate trees at x: "+xCoordinate +",z: "+zCoordinate);
+					var cells = [
+						terrain.getCell(xCoordinate, zCoordinate),
+						terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate),
+						terrain.getCell(xCoordinate, zCoordinate + terrain.cellSize),
+						terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate + terrain.cellSize)
+					];
+					var yCoordinate = Math.min(...cells.filter(cell => cell != null).map(cell => cell.height));
+					treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
+					result[treeId] = treeModel;
+					cpt++;
+					//probabilityCumulated = 0;
+				}
+
+			}	
 		}
+		console.log("number of trees created: "+cpt);
 		return result;
 	}
 }
