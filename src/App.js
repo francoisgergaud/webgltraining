@@ -127,7 +127,8 @@ class App extends React.Component {
     this.terrain = terrainFactory.generate(20, 100, 100);
     var terrainGeometryGenerator = new TerrainGeometryGenerator();
     var terrainGeometry = terrainGeometryGenerator.generate(this.terrain);
-    var terrainModel = factory.createAnimatedModelColored('id2', terrainGeometry.vertexes, terrainGeometry.colors, terrainGeometry.normals);
+    var terrainModel = factory.createAnimatedModelColored('id2', terrainGeometry.land.vertexes, terrainGeometry.land.colors, terrainGeometry.land.normals);
+    var waterModel = factory.createWaterModel('id3', terrainGeometry.water.vertexes, terrainGeometry.water.colors);
     
     var forestSeed = 1;
     var forestGenerator = new ForestGenerator(forestSeed, factory);
@@ -136,6 +137,7 @@ class App extends React.Component {
     var models = {...trees};
     //models['id1'] = animatedElement1;
     models['id2'] = terrainModel;
+    models['id3'] = waterModel;
 
     //set the camera
     var camera = new LookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180);
@@ -184,6 +186,8 @@ class App extends React.Component {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     //lookup camera
     //var selectedModel = this.state.models[this.state.selectedModel];
     // var cameraTarget = [selectedModel.position.x, selectedModel.position.y, selectedModel.position.z];

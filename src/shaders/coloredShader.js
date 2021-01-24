@@ -24,6 +24,7 @@ export var coloredFragmentShader =`
 	precision mediump float;
 	 
 	uniform vec3 u_reverseLightDirection;
+	uniform float u_transparency;
  
 	// Passed in from the vertex shader.
 	varying vec4 v_color;
@@ -35,8 +36,9 @@ export var coloredFragmentShader =`
 		gl_FragColor = v_color;
 		// multiply just the color portion (not the alpha) by the light
 	    gl_FragColor.rgb *= light;
+	    gl_FragColor.a = u_transparency;
 	}
 `;
 
 export var coloredShaderAttributeNames = ['a_position', 'a_color', 'a_normal'];
-export var coloredShaderUniformNames = ['u_worldViewProjection', 'u_world', 'u_reverseLightDirection'];
+export var coloredShaderUniformNames = ['u_worldViewProjection', 'u_world', 'u_reverseLightDirection', 'u_transparency'];

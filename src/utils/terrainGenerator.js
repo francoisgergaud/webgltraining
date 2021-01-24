@@ -6,11 +6,12 @@ import {m4} from './matrix.js';
  * Cells have the following definition: {type: <number>, height: <number>}
  */
 export class Terrain{
-	constructor(cellSize, cells, gridWidth, gridHeight){
+	constructor(cellSize, cells, gridWidth, gridHeight, waterCells){
 		this.cells = cells;
 		this.cellSize = cellSize;
 		this.gridWidth = gridWidth;
 		this.gridHeight = gridHeight;
+		this.waterCells = waterCells;
 	}
 
 /**
@@ -61,12 +62,12 @@ export class TerrainFactory {
 		}
 		//generate a river
 		var riverSeed = 1;
-		var floodLevel = cellSize/2;
+		var floodLevel = cellSize;
 		var pseudoRandomGenerator = new LinearCongruentialGenerator(riverSeed, floodLevel);
-		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
-		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
-		this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
-		return new Terrain(cellSize,cells, width, height);
+		var waterCells = this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
+		waterCells.push(...this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel));
+		waterCells.push(...this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel));
+		return new Terrain(cellSize,cells, width, height, waterCells);
 	}
 
 	/**
@@ -102,32 +103,36 @@ export class TerrainFactory {
 			newJ = j-1;
 		}
 		if(newI != i || newJ != j){
-			this.generateWater(cells, newI, newJ, floodLevel);
+			return this.generateWater(cells, newI, newJ, floodLevel);
 		} else {
 			var floodHeight = minHeight + floodLevel;
-			this.flood(cells, i, j, floodHeight);
+			var waterCells = [];
+			this.flood(cells, i, j, floodHeight, waterCells);
+			return waterCells;
 		}
 	}
 
-	flood(cells, i, j, height){
+	flood(cells, i, j, floodHeight, waterCells){
 		if(cells[i][j].type != 3){
 			cells[i][j].type = 3;
-			cells[i][j].height = height;
-			cells[i+1][j].height = height;
-			cells[i][j+1].height = height;
-			cells[i+1][j+1].height = height;
-			if(i <99 && height > cells[i+1][j].height){
-				this.flood(cells, i+1, j, height);
+			if(i <99 && floodHeight > cells[i+1][j].height){
+				this.flood(cells, i+1, j, floodHeight, waterCells);
 			} 
-			if(i > 0 && height > cells[i-1][j].height){
-				this.flood(cells, i-1, j, height);
+			if(i > 0 && floodHeight > cells[i-1][j].height){
+				this.flood(cells, i-1, j, floodHeight, waterCells);
 			}
-			if(j < 99 && height > cells[i][j+1].height){
-				this.flood(cells, i, j+1, height);
+			if(j < 99 && floodHeight > cells[i][j+1].height){
+				this.flood(cells, i, j+1, floodHeight, waterCells);
 			} 
-			if(j > 0 && height > cells[i][j-1].height){
-				this.flood(cells, i, j-1, height);
+			if(j > 0 && floodHeight > cells[i][j-1].height){
+				this.flood(cells, i, j-1, floodHeight, waterCells);
 			}
+			waterCells.push([i, j, floodHeight]);
+			// cells[i][j].waterHeight = floodHeight;
+			// cells[i+1][j].waterHeight = floodHeight;
+			// cells[i][j+1].waterHeight = floodHeight;
+			// cells[i+1][j+1].waterHeight = floodHeight;
+			
 		}
 	}
 }
@@ -141,7 +146,8 @@ export class TerrainGeometryGenerator {
 		this.voxelColors = {
 			1: {top: [45, 201, 10], side: [161, 68, 18]},//land voxel
 			2: {top: [5, 20, 237], side: [5, 20, 237]},//water-river voxel
-			3: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
+			3: {top: [245, 236, 66], side: [5, 20, 237]},//water-flood voxel
+			4: {top: [5, 20, 237], side: [5, 20, 237]},//water-flood voxel
 		};
 	}
 
@@ -151,33 +157,55 @@ export class TerrainGeometryGenerator {
 	 * @return {Object} The terrain's geometries
 	 */
 	generate(terrain){
-		var vertexes = [];
-		var colors = [];
-		var normals = [];
 		//generate the geometry for the terrain.
+		var landGeometries = {
+			vertexes: [],
+			colors: [],
+			normals: [],
+		};
 		for(var i = 0; i < terrain.cells.length-1; i++){
 			for(var j = 0; j < terrain.cells[i].length-1; j++){
-				// var height =terrain.cells[i][j].height;
-				// var color = this.voxelColors[terrain.cells[i][j].type];
-				// var voxel = this._generateVoxelGeometryAndColor(i, height, j, terrain.cellSize, color);
-			 // 	vertexes.push(...voxel.vertexes);
-			 // 	colors.push(...voxel.colors);
-			 // 	normals.push(...voxel.normals);
-			 var color = this.voxelColors[terrain.cells[i][j].type].top;
-			 var heightTopLeft =  terrain.cells[i][j].height;
-			 var heightTopRight = terrain.cells[i+1][j].height;
-			 var heightBottomLeft = terrain.cells[i][j+1].height;
-			 var heightBottomRight = terrain.cells[i+1][j+1].height;
-			 var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color);
-			 vertexes.push(...triangles.vertexes);
-			 colors.push(...triangles.colors);
-			 normals.push(...triangles.normals);
+				 var color = this.voxelColors[terrain.cells[i][j].type].top;
+				 var heightTopLeft =  terrain.cells[i][j].height;
+				 var heightTopRight = terrain.cells[i+1][j].height;
+				 var heightBottomLeft = terrain.cells[i][j+1].height;
+				 var heightBottomRight = terrain.cells[i+1][j+1].height;
+				 var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color);
+				 landGeometries.vertexes.push(...triangles.vertexes);
+				 landGeometries.colors.push(...triangles.colors);
+				 landGeometries.normals.push(...triangles.normals);
 			}
 		}
+		//generate the geomtry for the water
+		var waterGeometries = {
+			vertexes: [],
+			colors: [],
+			normals: [],
+		};
+		for(var cpt = 0, l=terrain.waterCells.length; cpt < l; cpt++){
+			var i = terrain.waterCells[cpt][0];
+			var j = terrain.waterCells[cpt][1];
+			var height = terrain.waterCells[cpt][2];
+			//color is harcoded
+			var color = this.voxelColors[4].top;
+			var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, height, height, height, height, color);
+			 waterGeometries.vertexes.push(...triangles.vertexes);
+			 waterGeometries.colors.push(...triangles.colors);
+			 waterGeometries.normals.push(...triangles.normals);
+
+		}
+
 		return {
-			vertexes : new Float32Array(vertexes),
-			colors : new Uint8Array(colors),
-			normals : new Float32Array(normals),
+			land: {
+				vertexes : new Float32Array(landGeometries.vertexes),
+				colors : new Uint8Array(landGeometries.colors),
+				normals : new Float32Array(landGeometries.normals),
+			},
+			water: {
+				vertexes : new Float32Array(waterGeometries.vertexes),
+				colors : new Uint8Array(waterGeometries.colors),
+				normals : new Float32Array(waterGeometries.normals),
+			},
 		}
 	}
 
@@ -201,153 +229,5 @@ export class TerrainGeometryGenerator {
 		normals.push(...normal2, ...normal2, ...normal2);
 		colors.push(...color, ...color, ...color, ...color, ...color, ...color);
 		return {vertexes: vertexes, colors: colors, normals: normals};
-	}
-
-	_generateVoxelGeometryAndColor(x, y, z, voxelSize, voxelColors){
-		var startX = x * voxelSize;
-		var startZ = z * voxelSize;
-		var startY = y;
-		var endX = startX + voxelSize;
-		var endZ = startZ + voxelSize;
-		var endY = startY + voxelSize;
-		var vertexes = [];
-		var colors = [];
-		var normals = [];
-		//top quad
-		vertexes.push(
-			startX, startY, endZ,
-			startX, startY, startZ,
-			endX, startY, startZ
-		);
-		vertexes.push(
-			startX, startY, endZ,
-			endX, startY, startZ,
-			endX, startY, endZ
-		);
-		colors.push(
-			...voxelColors.top,
-			...voxelColors.top,
-			...voxelColors.top,
-			...voxelColors.top,
-			...voxelColors.top,
-			...voxelColors.top,
-		);
-		normals.push(
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0,
-			0, 1, 0
-		);
-		//front quad
-		vertexes.push(
-			startX, startY, startZ,
-			startX, endY, startZ,
-			endX, endY, startZ
-		);
-		vertexes.push(
-			startX, startY, startZ,
-			endX, endY, startZ,
-			endX, startY, startZ
-		);
-		colors.push(
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-		);
-		normals.push(
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1
-		);
-		//right quad
-		vertexes.push(
-			endX, startY, startZ,
-			endX, endY, startZ,
-			endX, endY, endZ
-		);
-		vertexes.push(
-			endX, startY, startZ,
-			endX, endY, endZ,
-			endX, startY, endZ
-		);
-		colors.push(
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-		);
-		normals.push(
-			1, 0, 0,
-			1, 0, 0,
-			1, 0, 0,
-			1, 0, 0,
-			1, 0, 0,
-			1, 0, 0
-		);
-		//behind quad
-		vertexes.push(
-			endX, startY, endZ,
-			endX, endY, endZ,
-			startX, endY, endZ
-		);
-		vertexes.push(
-			endX, startY, endZ,
-			startX, endY, endZ,
-			startX, startY, endZ
-		);
-		colors.push(
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-		);
-		normals.push(
-			0, 0, -1,
-			0, 0, -1,
-			0, 0, -1,
-			0, 0, -1,
-			0, 0, -1,
-			0, 0, -1
-		);
-		//left quad
-		vertexes.push(
-			startX, startY, endZ,
-			startX, endY, endZ,
-			startX, endY, startZ
-		);
-		vertexes.push(
-			startX, startY, endZ,
-			startX, endY, startZ,
-			startX, startY, startZ
-		);
-		colors.push(
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-			...voxelColors.side,
-		);
-		normals.push(
-			-1, 0, 0,
-			-1, 0, 0,
-			-1, 0, 0,
-			-1, 0, 0,
-			-1, 0, 0,
-			-1, 0, 0
-		);
-	    return {vertexes: vertexes, colors: colors, normals: normals};
 	}
 }

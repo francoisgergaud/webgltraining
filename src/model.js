@@ -9,7 +9,6 @@ export class AnimatedModel {
   constructor(id, programInfo, vertexes, textureCoordinates){
     this.id = id;
     this.programInfo = programInfo;
-    
     this.position = {
       x: 0,
       y: 0,
@@ -57,6 +56,7 @@ export class AnimatedModel {
         offset: 0,
       }
     };
+    this.transparency = 1.0;
   }
 
   setTexture(image){
@@ -108,6 +108,7 @@ export class AnimatedModel {
     // Set the matrix.
     gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_worldViewProjection'], false, worldViewProjectionMatrix);
     gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_world'], false, worldMatrix);
+    gl.uniform1f(this.programInfo.uniformLocations['u_transparency'], this.transparency);
       // set the light direction.
     //var lightDirection = m4.normalize([0.5, -1.0, 0.5]);
     gl.uniform3fv(this.programInfo.uniformLocations['u_reverseLightDirection'], m4.normalize(lightDirection));
@@ -115,6 +116,58 @@ export class AnimatedModel {
     // Draw the geometry.
     gl.drawArrays(gl.TRIANGLES, 0, this.numberOfVertexes);
   }
+}
+
+export class WaterModel extends AnimatedModel {
+
+  //constructr stores the vertextes
+  constructor(id, programInfo, vertexes){
+    super(id, programInfo, vertexes, null);
+    this.vertexes = vertexes;
+    this.waveDisplacement = {
+      current: 0,
+      speed: 2,
+      waveLongAmplitude: 10,
+      direction: [1,1],
+      waveHighAmplitude:2,
+    };
+    this.transparency = 0.8;
+  }
+
+  //update is overriding the default animated-model method. Here the vertexes position and normal
+  // are reset
+  update(deltaTimeSecond){
+    this.waveDisplacement.current += deltaTimeSecond * this.waveDisplacement.speed;
+    //this.waveDisplacement.current %= this.waveDisplacement.speed;
+    var factor = (this.waveDisplacement.current/this.waveDisplacement.waveLongAmplitude)*2*Math.PI;
+    var result = {vertexes: [], normals:[]};
+    //iterate face by face (3 vertexes, each one with 3D coordinates = 9 numbers)
+    for(var i=0, l = this.vertexes.length; i < l; i+=9) {
+      var vertex1 = [this.vertexes[i],this.vertexes[i+1], this.vertexes[i+2]];
+      var vertex2 = [this.vertexes[i+3],this.vertexes[i+4], this.vertexes[i+5]];
+      var vertex3 = [this.vertexes[i+6],this.vertexes[i+7], this.vertexes[i+8]];
+      //modify the height (t coordiante) of each vertex
+      vertex1[1]+= Math.sin(factor + vertex1[0]*this.waveDisplacement.direction[0] + vertex1[2]*this.waveDisplacement.direction[1])*this.waveDisplacement.waveHighAmplitude;
+      vertex2[1]+= Math.sin(factor + vertex2[0]*this.waveDisplacement.direction[0] + vertex2[2]*this.waveDisplacement.direction[1])*this.waveDisplacement.waveHighAmplitude;
+      vertex3[1]+= Math.sin(factor + vertex3[0]*this.waveDisplacement.direction[0] + vertex3[2]*this.waveDisplacement.direction[1])*this.waveDisplacement.waveHighAmplitude;
+      result.vertexes.push(...vertex1,...vertex2,...vertex3);
+      var normal = m4.surfaceNormal(vertex1, vertex2, vertex3);
+      result.normals.push(...normal, ...normal, ...normal);
+    }
+    var gl = this.programInfo.gl;
+    var positionBuffer = this.attributes['a_position'].buffer; 
+    // Put geometry data into buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    //calculate the geometries
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(result.vertexes), gl.STATIC_DRAW);
+
+    var normalBuffer = this.attributes['a_normal'].buffer; 
+    // Put geometry data into buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    //calculate the geometries
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(result.normals), gl.STATIC_DRAW);
+  }
+
 }
 
 export class ProgramInfo {
@@ -206,6 +259,33 @@ export class ModelFactory {
     var normalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+    model.attributes['a_normal'] = {
+      buffer: normalBuffer, 
+      size: 3, 
+      type: gl.FLOAT,
+      normalize: false,
+      stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+      offset: 0,
+    };
+    return model;
+  }
+
+  createWaterModel(id, vertexes, colors){
+    var model = new WaterModel(id, this.colorProgram, vertexes);
+    // Create a buffer to put texture coordinate in
+    var gl = this.colorProgram.gl;
+    var colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+    model.attributes['a_color'] = {
+      buffer: colorBuffer, 
+      size: 3, 
+      type: gl.UNSIGNED_BYTE,
+      normalize: true,
+      stride: 0,     // 0 = move forward size * sizeof(type) each iteration to get the next position
+      offset: 0,
+    };
+    var normalBuffer = gl.createBuffer();
     model.attributes['a_normal'] = {
       buffer: normalBuffer, 
       size: 3, 

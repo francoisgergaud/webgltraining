@@ -167,14 +167,7 @@ export class ForestGenerator {
 				var noiseValue = perlinNoise.value[i][j];
 				var probability = (perlinNoise.max - noiseValue)/amplitude;
 				if(probability < this.randomNumberGenerator.generate() * randomFactor){
-					var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;
-					var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
-					var mainTruncLength = treeRandomGenerator.generateRange(40, 80); 
-					var tree = treeGenerator.generateRandom(treeRandomGenerator, mainTruncLength, 8, 0, 0, 2, 0.5, 1);
-					var treeId = 'tree' + cpt.toString();
-					var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator);
-					var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
-			    	var xCoordinate = i*terrain.cellSize;
+					var xCoordinate = i*terrain.cellSize;
 					var zCoordinate = j*terrain.cellSize;
 					//console.log("generate trees at x: "+xCoordinate +",z: "+zCoordinate);
 					var cells = [
@@ -183,11 +176,22 @@ export class ForestGenerator {
 						terrain.getCell(xCoordinate, zCoordinate + terrain.cellSize),
 						terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate + terrain.cellSize)
 					];
-					var yCoordinate = Math.min(...cells.filter(cell => cell != null).map(cell => cell.height));
-					treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
-					result[treeId] = treeModel;
-					cpt++;
-					//probabilityCumulated = 0;
+					//do not generate a tree if the cell is on water
+					var cellsWithWater = cells.filter(cell => cell != null).filter(cell => cell.type == 2 || cell.type == 3);
+					if(cellsWithWater.length == 0){
+						var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;
+						var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
+						var mainTruncLength = treeRandomGenerator.generateRange(40, 80); 
+						var tree = treeGenerator.generateRandom(treeRandomGenerator, mainTruncLength, 8, 0, 0, 2, 0.5, 1);
+						var treeId = 'tree' + cpt.toString();
+						var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator);
+						var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
+						var yCoordinate = Math.min(...cells.filter(cell => cell != null).map(cell => cell.height));
+						treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
+						result[treeId] = treeModel;
+						cpt++;
+						//probabilityCumulated = 0;
+					}
 				}
 
 			}	
