@@ -9,7 +9,7 @@ import {m4} from './matrix.js';
  * @param  {number} scaleFactor a scalar
  * @return {[number]} the vertices coordinates
  */
-export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor){
+export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, color){
 	var geometry =  {
 		vertexes: [],
 		colors: [],
@@ -54,6 +54,7 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor){
 		[vertexes[9], vertexes[8], vertexes[1]]//faces.Add(new TriangleIndices(9, 8, 1));
 
 	];
+	//rotate the geometry
 	var matrix = m4.xRotation(xRadian);
 	matrix = m4.yRotate(matrix, yRadian);
 	for (var i=0, l=faces.length; i<l; i++) {
@@ -66,10 +67,19 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor){
 			);
 		}
 	}
-	for (var i=0, l=faces.length; i<l; i++) {
-		var normal = m4.surfaceNormal(faces[i][1], faces[i][0], faces[i][2]);
+	for (var i=0, l=geometry.vertexes.length; i<l; i+=9) {
+		var normal = m4.surfaceNormal(
+			[geometry.vertexes[i+3], geometry.vertexes[i+4], geometry.vertexes[i+5]],
+			[geometry.vertexes[i], geometry.vertexes[i+1], geometry.vertexes[i+2]],
+			[geometry.vertexes[i+6], geometry.vertexes[i+7], geometry.vertexes[i+8]]
+		);
 		geometry.normals.push(...normal, ...normal, ...normal);
-		geometry.colors.push(...[21, 153, 57], ...[21, 153, 57], ...[21, 153, 57]);
+		geometry.colors.push(...color, ...color, ...color);
 	}
+	// for (var i=0, l=faces.length; i<l; i++) {
+	// 	var normal = m4.surfaceNormal(faces[i][1], faces[i][0], faces[i][2]);
+	// 	geometry.normals.push(...normal, ...normal, ...normal);
+	// 	geometry.colors.push(...[21, 153, 57], ...[21, 153, 57], ...[21, 153, 57]);
+	// }
 	return geometry;
 }

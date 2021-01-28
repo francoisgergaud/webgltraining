@@ -128,11 +128,6 @@ export class TerrainFactory {
 				this.flood(cells, i, j-1, floodHeight, waterCells);
 			}
 			waterCells.push([i, j, floodHeight]);
-			// cells[i][j].waterHeight = floodHeight;
-			// cells[i+1][j].waterHeight = floodHeight;
-			// cells[i][j+1].waterHeight = floodHeight;
-			// cells[i+1][j+1].waterHeight = floodHeight;
-			
 		}
 	}
 }
