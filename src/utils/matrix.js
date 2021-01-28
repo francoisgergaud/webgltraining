@@ -17,6 +17,29 @@ var m4 = {
     ];
   },
 
+  //see https://en.wikipedia.org/wiki/Rotation_matrix
+  inverseLookAt: function(lookAtMatrix) {
+    var xRotation = 0;
+    var yRotation = Math.atan(lookAtMatrix[10]/lookAtMatrix[8]);
+    var zRotation = Math.atan(lookAtMatrix[9]/Math.sqrt(lookAtMatrix[10]*lookAtMatrix[10] + (lookAtMatrix[8] * lookAtMatrix[8])));
+
+    var xPosition = lookAtMatrix[12];
+    var yPosition = lookAtMatrix[13];
+    var zPosition = lookAtMatrix[14];
+    return {
+      position : {
+        x: xPosition,
+        y: yPosition,
+        z: zPosition,
+      },
+      rotation : {
+        x: xRotation,
+        y: yRotation,
+        z: zRotation,
+      }
+    };
+  },
+
   perspective: function(fieldOfViewInRadians, aspect, near, far) {
     var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
     var rangeInv = 1.0 / (near - far);

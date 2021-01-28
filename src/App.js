@@ -219,6 +219,7 @@ class App extends React.Component {
     var selectedModelPosition = this.state.models[modelSelectdId].position;
     var cameraTarget = [selectedModelPosition.x, selectedModelPosition.y, selectedModelPosition.z];
     this.state.camera.setTarget(cameraTarget);
+    this.state.player.rotation = this.state.camera.rotation;
     this.setState({
       ...this.state,
       selectedModel: modelSelectdId,

@@ -36,19 +36,10 @@ export class LookAtCamera {
 	getViewProjectionMatrix(){
 		var aspect = this.viewWidth / this.viewHeight;	    
 		var projectionMatrix = m4.perspective(this.fieldOfViewRadian, aspect, this.zNear, this.zFar);
-		var cameraMatrix = null;
-		if(this.target != null){
-			var up = [0, 1, 0];
-		    // Compute the camera's matrix using look at.
-		    var position = [this.position.x, this.position.y, this.position.z];
-		    cameraMatrix = m4.lookAt(position, this.target, up);
-		} else {
-			//console.log("camera position x: " + this.position.x + ", y: "+ this.position.y + ",z: "+ this.position.z + ",x rot: "+ this.rotation.x + ",y rot: "+ this.rotation.y);
-			cameraMatrix = m4.translation(this.position.x, this.position.y, this.position.z);
-			cameraMatrix = m4.zRotate(cameraMatrix, this.rotation.z * Math.PI / 180);
-			cameraMatrix = m4.xRotate(cameraMatrix, this.rotation.x * Math.PI / 180);
-			cameraMatrix = m4.yRotate(cameraMatrix, this.rotation.y * Math.PI / 180);
-		}
+		var cameraMatrix = m4.translation(this.position.x, this.position.y, this.position.z);
+		cameraMatrix = m4.zRotate(cameraMatrix, this.rotation.z * Math.PI / 180);
+		cameraMatrix = m4.xRotate(cameraMatrix, this.rotation.x * Math.PI / 180);
+		cameraMatrix = m4.yRotate(cameraMatrix, this.rotation.y * Math.PI / 180);
 		// Make a view matrix from the camera matrix.
 	    var viewMatrix = m4.inverse(cameraMatrix);
 	    // Compute a view projection matrix
@@ -56,6 +47,12 @@ export class LookAtCamera {
 	}
 
 	setTarget(targetPosition){
-		this.target = targetPosition;
+		var up = [0, 1, 0];
+	    // Compute the camera's matrix using look at.
+	    var position = [this.position.x, this.position.y, this.position.z];
+	    var cameraMatrix = m4.lookAt(position, targetPosition, up);
+	    //reverse the lookAt to get the camera rotation
+	    var inverseLookAt = m4.inverseLookAt(cameraMatrix);
+	    this.setRotation(180 * inverseLookAt.rotation.x/Math.PI, 180 * inverseLookAt.rotation.y/Math.PI, 180 * inverseLookAt.rotation.z/Math.PI);
 	}
 }
