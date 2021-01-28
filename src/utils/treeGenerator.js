@@ -114,7 +114,7 @@ export class TreeGeometryGenerator {
 		//draw the leaf
 		var xRadian = randomGenerator.generateRange(0,1) * Math.PI*2;
 		var yRadian = randomGenerator.generateRange(0,1) * Math.PI*2;
-		var leaf = generateIcosahedron(vertex3, xRadian, yRadian, node.width*randomGenerator.generateRange(1,2), leafColor);
+		var leaf = generateIcosahedron(vertex3, xRadian, yRadian, node.length*randomGenerator.generateRange(0.1, 0.3), leafColor);
 		geometry.vertexes.push(...leaf.vertexes);
 		geometry.colors.push(...leaf.colors);
 		geometry.normals.push(...leaf.normals);
@@ -191,15 +191,16 @@ export class ForestGenerator {
 							var truncXRotation = 0;
 							var truncYRotation = treeRandomGenerator.generateRange(-0.5, 0.5);
 							var treeId = 'tree' + cpt.toString();
-							var leafColor = [50, 168, 82];
-							var branchColor = [214, 62, 207];
+							var leafColor = [9, 179, 342];
+							var branchColor = [148, 80, 16];
 							var maxNumberOfChildren = 3;
 							var subBranchLengthFactor = 0.4;
 							var depth = 2;
 							var tree = treeGenerator.generateRandom(treeRandomGenerator, mainTruncLength, truncWidth, truncXRotation, truncYRotation, maxNumberOfChildren, subBranchLengthFactor, depth);
-							var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator, leafColor, branchColor);
+							var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator, branchColor, leafColor);
 							var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
-							var yCoordinate = Math.min(...cells.filter(cell => cell != null).map(cell => cell.height));
+							var cellYCoordinates = cells.filter(cell => cell != null).map(cell => cell.height);
+							var yCoordinate =  Math.min(...cellYCoordinates) + (Math.min(...cellYCoordinates) - Math.min(...cellYCoordinates))/2;
 							treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
 							result[treeId] = treeModel;
 							cpt++;
