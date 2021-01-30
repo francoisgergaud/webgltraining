@@ -45,7 +45,7 @@ export class TreeGenerator{
 				var childXRotation = randomNumberGenerator.generateRange(-0.2, 0.2) + xRotation;
 				var childYRotation = randomNumberGenerator.generate(-0.5, 0.5) + yRotation;
 				var branchLength = length*reductionFactor - randomNumberGenerator.generate(0, length*reductionFactor) +1;
-				children.push(this.generateRandom(randomNumberGenerator, length*reductionFactor, width*reductionFactor, childXRotation, childYRotation, maxNumberOfChildren, reductionFactor, depth-1));
+				children.push(this.generateRandom(randomNumberGenerator, branchLength, width*reductionFactor, childXRotation, childYRotation, maxNumberOfChildren, reductionFactor, depth-1));
 			}
 		}	
 		return {
@@ -182,8 +182,8 @@ export class ForestGenerator {
 							terrain.getCell(xCoordinate + terrain.cellSize, zCoordinate + terrain.cellSize)
 						];
 						//do not generate a tree if the cell is on water
-						var cellsWithWater = cells.filter(cell => cell != null).filter(cell => cell.type == 2 || cell.type == 3);
-						if(cellsWithWater.length == 0){
+						var cellsWithWater = cells.filter(cell => cell !== null).filter(cell => cell.type === 2 || cell.type === 3);
+						if(cellsWithWater.length === 0){
 							var treeSeed = this.randomNumberGenerator.generate() * this.randomNumberGenerator.modulus;
 							var treeRandomGenerator = new LinearCongruentialGenerator(treeSeed);
 							var mainTruncLength = treeRandomGenerator.generateRange(40, 70);

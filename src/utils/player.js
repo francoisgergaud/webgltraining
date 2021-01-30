@@ -32,6 +32,10 @@ export class Player {
 		}
 	}
 
+	setRotation(rotation) {
+		this.rotation = rotation;
+	}
+
 	update(deltaTimeSecond){
 		this.rotation.x += this.animationParameters.rotate.x * deltaTimeSecond;
 	    this.rotation.y += this.animationParameters.rotate.y * deltaTimeSecond;

@@ -24,13 +24,14 @@ export function interpolate(a0, a1, w) {
 export function generate2DPerlinNoise(seed, width, height, harmonics){
 	var lgGenerator = new LinearCongruentialGenerator(seed);
 	var harmonicNoise = new Map();
+	var factors, i, j, offset, amplitude, offset;
 	//calculare the grid-factors
-	for (const [offset, amplitude] of harmonics) {
-		var factors = [];
-		for(var i = 0; i < width+offset; i+=offset){
+	for ([offset, amplitude] of harmonics) {
+		factors = [];
+		for(i = 0; i < width+offset; i+=offset){
 			var factorColumn = [];
 			factors.push(factorColumn);
-			for(var j = 0; j < height+offset; j+=offset){
+			for(j = 0; j < height+offset; j+=offset){
 				var angleRad = lgGenerator.generate() * Math.PI *2;
 				factorColumn.push({x: Math.cos(angleRad), y: Math.sin(angleRad)});
 			}
@@ -40,8 +41,8 @@ export function generate2DPerlinNoise(seed, width, height, harmonics){
 	//interpolate all the cells
 	var result = {value: [], min: Infinity, max: -Infinity};
 	var firstLoop = true;
-	for (var [offset, factors] of harmonicNoise) {
-		for(var i = 0; i < width; i++){
+	for ([offset, factors] of harmonicNoise) {
+		for(i = 0; i < width; i++){
 			var resultColumn = null;
 			if(firstLoop) {
 				resultColumn = [];
@@ -49,7 +50,7 @@ export function generate2DPerlinNoise(seed, width, height, harmonics){
 			} else {
 				resultColumn = result.value[i];
 			}
-			for(var j = 0; j < height; j++){
+			for(j = 0; j < height; j++){
 				var left = Math.floor(i/offset);
 			    var right = left + 1;
 			    var top = Math.floor(j/offset);

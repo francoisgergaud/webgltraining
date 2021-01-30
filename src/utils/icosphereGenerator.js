@@ -10,6 +10,7 @@ import {m4} from './matrix.js';
  * @return {[number]} the vertices coordinates
  */
 export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, color){
+	var i,l;
 	var geometry =  {
 		vertexes: [],
 		colors: [],
@@ -57,7 +58,7 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, 
 	//rotate the geometry
 	var matrix = m4.xRotation(xRadian);
 	matrix = m4.yRotate(matrix, yRadian);
-	for (var i=0, l=faces.length; i<l; i++) {
+	for (i=0, l=faces.length; i<l; i++) {
 		for(var j=0, m=faces[i].length; j<m; j++) {
 			var vertex = m4.multiply1D(matrix, [faces[i][j][0], faces[i][j][1], faces[i][j][2], 1]);
 			geometry.vertexes.push(
@@ -67,7 +68,7 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, 
 			);
 		}
 	}
-	for (var i=0, l=geometry.vertexes.length; i<l; i+=9) {
+	for (i=0, l=geometry.vertexes.length; i<l; i+=9) {
 		var normal = m4.surfaceNormal(
 			[geometry.vertexes[i+3], geometry.vertexes[i+4], geometry.vertexes[i+5]],
 			[geometry.vertexes[i], geometry.vertexes[i+1], geometry.vertexes[i+2]],

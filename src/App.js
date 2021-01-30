@@ -13,8 +13,8 @@ import {LookAtCamera} from './utils/camera.js';
 import {InputController} from './utils/inputController.js';
 import {ModelFactory, ProgramInfo} from './model.js';
 import {model, textureCoordinates} from './geometries.js';
-import {TerrainFactory, Terrain, TerrainGeometryGenerator} from './utils/terrainGenerator.js';
-import {TreeGenerator, TreeGeometryGenerator, ForestGenerator} from './utils/treeGenerator.js';
+import {TerrainFactory, TerrainGeometryGenerator} from './utils/terrainGenerator.js';
+import {ForestGenerator} from './utils/treeGenerator.js';
 import {Player} from './utils/player.js';
 
 class App extends React.Component {
@@ -25,10 +25,8 @@ class App extends React.Component {
     var width= 100;
     var height= 30;
     var depth= 400;
+    this.rafValue= 0;
     this.state = {
-      animationContext: {
-        rafValue: 0,
-      },
       graphicContext: {
         glContext: null,
         program: null,
@@ -40,7 +38,8 @@ class App extends React.Component {
       selectedModel : "",
       camera : null,
     };
-    this.mapCanvas = React.createRef();  
+    this.mapCanvas = React.createRef();
+    this.canvas3D = React.createRef();
   }
 
   //component render
@@ -49,7 +48,7 @@ class App extends React.Component {
       <Container fluid className="p-3 MainRow">
         <Row className="MainRow">
           <Col xs={8} className="MainRow">
-            <WebGLCanvas afterInit={ this.setGlContext.bind(this)}/>
+            <WebGLCanvas ref={ this.canvas3D}/>
           </Col>
           <Col>
             <select type="text" value={this.state.selectedModel} onChange={this.selectModel.bind(this)} >
@@ -64,7 +63,7 @@ class App extends React.Component {
               <Button onClick={() => this.handleAnimationClick()}>Start/Stop</Button>
             </div>
             <div>
-              height map:
+              map:
               <canvas id="mapHeights" width="100%" height="100%" ref={this.mapCanvas}></canvas>
             </div>
           </Col>
@@ -79,17 +78,21 @@ class App extends React.Component {
    * @return {[type]} [description]
    */
   componentDidMount(){
+    var glContext = this.canvas3D.current.canvas.current.getContext("webgl")
+    this.setGlContext(glContext, this.canvas3D.current.canvas.current);
     var myContext= this.mapCanvas.current.getContext('2d');
-    var id = myContext.createImageData(1,1);
-    var d  = id.data;
+    var imageData = myContext.createImageData(1,1);
+    var data  = imageData.data;
+    var minHeight = this.terrain.minHeight;
+    var maxHeight = this.terrain.maxHeight;
     for(var x=0; x < this.terrain.cells.length; x++){
       for(var y=0; y < this.terrain.cells[x].length; y++){
-        var coeff = this.terrain.cells[x][y].height * 255;
-        d[0]   = coeff;
-        d[1]   = coeff;
-        d[2]   = coeff
-        d[3]   = 255;
-        myContext.putImageData( id, x, y );
+        var coeff = ((maxHeight - this.terrain.cells[x][y].height)/(maxHeight - minHeight)) * 255;
+        data[0] = coeff;
+        data[1] = coeff;
+        data[2] = coeff
+        data[3] = 255;
+        myContext.putImageData(imageData, x, y );
       }
     }
   }
@@ -164,9 +167,9 @@ class App extends React.Component {
   animate(now) {
     now *= 0.001;
     // Subtract the previous time from the current time
-    var deltaTime = now - this.state.animationContext.rafValue;
+    var deltaTime = now - this.rafValue;
     // Remember the current time for the next frame.
-    this.state.animationContext.rafValue = now;
+    this.rafValue = now;
     //calculate next animation state
     Object.keys(this.state.models).forEach(
       modelId => this.state.models[modelId].update(deltaTime)
@@ -219,7 +222,7 @@ class App extends React.Component {
     var selectedModelPosition = this.state.models[modelSelectdId].position;
     var cameraTarget = [selectedModelPosition.x, selectedModelPosition.y, selectedModelPosition.z];
     this.state.camera.setTarget(cameraTarget);
-    this.state.player.rotation = this.state.camera.rotation;
+    this.state.player.setRotation(this.state.camera.rotation);
     this.setState({
       ...this.state,
       selectedModel: modelSelectdId,

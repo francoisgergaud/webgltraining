@@ -1,4 +1,4 @@
-import {interpolate, generate2DPerlinNoise, LinearCongruentialGenerator} from './randomUtils.js';
+import {generate2DPerlinNoise, LinearCongruentialGenerator} from './randomUtils.js';
 import {m4} from './matrix.js';
 
 /**
@@ -6,12 +6,14 @@ import {m4} from './matrix.js';
  * Cells have the following definition: {type: <number>, height: <number>}
  */
 export class Terrain{
-	constructor(cellSize, cells, gridWidth, gridHeight, waterCells){
+	constructor(cellSize, cells, gridWidth, gridHeight, waterCells, minHeight, maxHeight){
 		this.cells = cells;
 		this.cellSize = cellSize;
 		this.gridWidth = gridWidth;
 		this.gridHeight = gridHeight;
 		this.waterCells = waterCells;
+		this.minHeight = minHeight;
+		this.maxHeight = maxHeight;
 	}
 
 /**
@@ -67,7 +69,7 @@ export class TerrainFactory {
 		var waterCells = this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel);
 		waterCells.push(...this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel));
 		waterCells.push(...this.generateWater(cells, Math.floor(pseudoRandomGenerator.generate()*width), Math.floor(pseudoRandomGenerator.generate()*height), floodLevel));
-		return new Terrain(cellSize,cells, width, height, waterCells);
+		return new Terrain(cellSize, cells, width, height, waterCells, perlinNoise.min, perlinNoise.max);
 	}
 
 	/**
@@ -81,7 +83,6 @@ export class TerrainFactory {
 	generateWater(cells, i, j, floodLevel){
 		cells[i][j].type = 2;
 		var minHeight = cells[i][j].height;
-		var direction = 0;
 		var newI = i;
 		var newJ = j;
 		if(i <99 && minHeight > cells[i+1][j].height){
@@ -102,7 +103,7 @@ export class TerrainFactory {
 			newI = i;
 			newJ = j-1;
 		}
-		if(newI != i || newJ != j){
+		if(newI !== i || newJ !== j){
 			return this.generateWater(cells, newI, newJ, floodLevel);
 		} else {
 			var floodHeight = minHeight + floodLevel;
@@ -113,7 +114,7 @@ export class TerrainFactory {
 	}
 
 	flood(cells, i, j, floodHeight, waterCells){
-		if(cells[i][j].type != 3){
+		if(cells[i][j].type !== 3){
 			cells[i][j].type = 3;
 			if(i <99 && floodHeight > cells[i+1][j].height){
 				this.flood(cells, i+1, j, floodHeight, waterCells);
@@ -158,14 +159,15 @@ export class TerrainGeometryGenerator {
 			colors: [],
 			normals: [],
 		};
-		for(var i = 0; i < terrain.cells.length-1; i++){
-			for(var j = 0; j < terrain.cells[i].length-1; j++){
-				 var color = this.voxelColors[terrain.cells[i][j].type].top;
+		var i, j, triangles, color;
+		for(i = 0; i < terrain.cells.length-1; i++){
+			for(j = 0; j < terrain.cells[i].length-1; j++){
+				 color = this.voxelColors[terrain.cells[i][j].type].top;
 				 var heightTopLeft =  terrain.cells[i][j].height;
 				 var heightTopRight = terrain.cells[i+1][j].height;
 				 var heightBottomLeft = terrain.cells[i][j+1].height;
 				 var heightBottomRight = terrain.cells[i+1][j+1].height;
-				 var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color);
+				 triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, heightTopLeft, heightTopRight, heightBottomLeft, heightBottomRight, color);
 				 landGeometries.vertexes.push(...triangles.vertexes);
 				 landGeometries.colors.push(...triangles.colors);
 				 landGeometries.normals.push(...triangles.normals);
@@ -178,12 +180,12 @@ export class TerrainGeometryGenerator {
 			normals: [],
 		};
 		for(var cpt = 0, l=terrain.waterCells.length; cpt < l; cpt++){
-			var i = terrain.waterCells[cpt][0];
-			var j = terrain.waterCells[cpt][1];
+			i = terrain.waterCells[cpt][0];
+			j = terrain.waterCells[cpt][1];
 			var height = terrain.waterCells[cpt][2];
 			//color is harcoded
-			var color = this.voxelColors[4].top;
-			var triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, height, height, height, height, color);
+			color = this.voxelColors[4].top;
+			triangles = this._generateTriangleGeometryAndColor(i, j, terrain.cellSize, height, height, height, height, color);
 			 waterGeometries.vertexes.push(...triangles.vertexes);
 			 waterGeometries.colors.push(...triangles.colors);
 			 waterGeometries.normals.push(...triangles.normals);
