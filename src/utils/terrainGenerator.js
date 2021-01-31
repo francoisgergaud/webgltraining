@@ -22,6 +22,21 @@ export class Terrain{
  * @param  {float} j the Y coordinate
  * @return {Cell} the cell if found. null otherwise.
  */
+	getCells(i,j){
+		var cellX = Math.floor(i/this.cellSize)
+		var cellY = Math.floor(j/this.cellSize)
+		if(cellX >= 0 && cellX < this.gridWidth-1 && cellY >= 0 && cellY < this.gridHeight-1){
+			return {
+				'topLeft': this.cells[cellX][cellY],
+				'topRight': this.cells[cellX+1][cellY],
+				'bottomLeft': this.cells[cellX][cellY+1],
+				'bottomRight': this.cells[cellX+1][cellY+1],
+			};
+		} else {
+			return null;
+		}
+	}
+
 	getCell(i,j){
 		var cellX = Math.floor(i/this.cellSize)
 		var cellY = Math.floor(j/this.cellSize)

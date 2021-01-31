@@ -58,13 +58,22 @@ export class Player {
 		var offsetX = (-this.animationParameters.velocity * deltaTimeSecond) * Math.sin(this.rotation.y * Math.PI / 180);
 		this.position.z += offsetZ;
 	    this.position.x += offsetX;
-		//set the height depending on the terrain
-		var cell = this.terrain.getCell(this.position.x, this.position.z);
-		if(cell != null) {
-			this.targetPositionY = cell.height + this.terrain.cellSize;
-			//this.position.y = cellHeight-this.terrain.voxelSize;
-		}
-		//smooth the vertical movement
+
+	    var cells = this.terrain.getCells(this.position.x, this.position.z);
+	    var xRatio = (this.position.x % this.terrain.cellSize) / this.terrain.cellSize;
+	    var zRatio = (this.position.z % this.terrain.cellSize) / this.terrain.cellSize;
+	    if(xRatio > zRatio){
+	    	var xInterpolation = cells['topLeft'].height + ((cells['topRight'].height - cells['topLeft'].height) * xRatio);
+	    	var zInterpolation = cells['topRight'].height + ((cells['bottomRight'].height - cells['topRight'].height) * zRatio);
+	    	this.targetPositionY = (xInterpolation + zInterpolation)/2;
+	    } else {
+	    	var xInterpolation = cells['bottomLeft'].height + ((cells['bottomRight'].height - cells['bottomLeft'].height) * xRatio);
+	    	var zInterpolation = cells['topLeft'].height + ((cells['bottomLeft'].height - cells['topLeft'].height) * zRatio);
+	    	this.targetPositionY = (xInterpolation + zInterpolation)/2;
+	    }
+	    this.targetPositionY += this.terrain.cellSize;
+
+		// //smooth the vertical movement
 		if(this.position.y !== this.targetPositionY){
 			if(this.position.y > this.targetPositionY) {
 				this.position.y-=this.animationParameters.verticalVelocity*deltaTimeSecond;
@@ -78,6 +87,7 @@ export class Player {
 				}
 			}
 		}
+
 		//the y axis is inverted for the camera
 		this.camera.setPosition(this.position.x, this.position.y, this.position.z);
 	}

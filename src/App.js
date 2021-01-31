@@ -12,7 +12,6 @@ import {coloredFragmentShader, coloredVertexShader, coloredShaderAttributeNames,
 import {LookAtCamera} from './utils/camera.js';
 import {InputController} from './utils/inputController.js';
 import {ModelFactory, ProgramInfo} from './model.js';
-import {model, textureCoordinates} from './geometries.js';
 import {TerrainFactory, TerrainGeometryGenerator} from './utils/terrainGenerator.js';
 import {ForestGenerator} from './utils/treeGenerator.js';
 import {Player} from './utils/player.js';
@@ -114,16 +113,6 @@ class App extends React.Component {
     
     //initialize the scene's models
     var factory = new ModelFactory(colorProgramInfo, texturedProgramInfo);
-    var animatedElement1 = factory.createAnimatedModelTextured('id1', model, textureCoordinates);
-    //var animatedElement2 = factory.createAnimatedModelColored('id2', model, colors);
-     
-    // Asynchronously load an image for texture
-    var image = new Image();
-    image.src = "f-texture.png";
-    image.addEventListener('load', function() {
-      // Now that the image has loaded make copy it to the texture.
-      animatedElement1.setTexture(image);
-    });
 
     //generate the terrain
     var terrainFactory = new TerrainFactory();
