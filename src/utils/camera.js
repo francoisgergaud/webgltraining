@@ -55,4 +55,9 @@ export class LookAtCamera {
 	    var inverseLookAt = m4.inverseLookAt(cameraMatrix);
 	    this.setRotation(180 * inverseLookAt.rotation.x/Math.PI, 180 * inverseLookAt.rotation.y/Math.PI, 180 * inverseLookAt.rotation.z/Math.PI);
 	}
+
+	setViewportDimension(width, height){
+		this.viewWidth = width;
+		this.viewHeight = height;
+	}
 }

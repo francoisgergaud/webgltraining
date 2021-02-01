@@ -5,8 +5,7 @@
  */
 export class Player {
 
-	constructor(camera, terrain){
-		this.camera = camera;
+	constructor(terrain){
 		this.terrain = terrain;
 		var xPosition = (terrain.gridWidth/2) * terrain.cellSize;
 		var zPosition = (terrain.gridHeight/2) * terrain.cellSize;
@@ -32,6 +31,14 @@ export class Player {
 		}
 	}
 
+	setCamera(camera){
+		this.camera = camera;
+	}
+
+	setMiniMap(miniMap){
+		this.miniMap = miniMap;
+	}
+
 	setRotation(rotation) {
 		this.rotation = rotation;
 	}
@@ -52,8 +59,6 @@ export class Player {
 		if(this.rotation.z < 0 ){
 			this.rotation.z += 360;
 		}
-		this.camera.setRotation(this.rotation.x, this.rotation.y, this.rotation.z);
-		// when camera rotation is 0, it points to the -Z axis, not the X+ axis
 		var offsetZ = (-this.animationParameters.velocity * deltaTimeSecond) * Math.cos(this.rotation.y * Math.PI / 180);
 		var offsetX = (-this.animationParameters.velocity * deltaTimeSecond) * Math.sin(this.rotation.y * Math.PI / 180);
 		this.position.z += offsetZ;
@@ -73,7 +78,7 @@ export class Player {
 	    }
 	    this.targetPositionY += this.terrain.cellSize;
 
-		// //smooth the vertical movement
+		// smooth the vertical movement
 		if(this.position.y !== this.targetPositionY){
 			if(this.position.y > this.targetPositionY) {
 				this.position.y-=this.animationParameters.verticalVelocity*deltaTimeSecond;
@@ -88,7 +93,9 @@ export class Player {
 			}
 		}
 
-		//the y axis is inverted for the camera
+		// when camera rotation is 0, it points to the -Z axis, not the +X axis
+		this.camera.setRotation(this.rotation.x, this.rotation.y, this.rotation.z);
 		this.camera.setPosition(this.position.x, this.position.y, this.position.z);
+		this.miniMap.setPlayerPosition(this.position.x, this.position.z);
 	}
 }

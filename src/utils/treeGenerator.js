@@ -145,10 +145,8 @@ export class TreeGeometryGenerator {
 
 export class ForestGenerator {
 
-	constructor(seed, modelFactory){
+	constructor(seed){
 		this.randomNumberGenerator = new LinearCongruentialGenerator(seed);
-		this.treeGeometryGenerator = new TreeGeometryGenerator();
-		this.modelFactory = modelFactory;
 	}
 	
 	generate(terrain, numberOfTrees){
@@ -190,27 +188,48 @@ export class ForestGenerator {
 							var truncWidth = treeRandomGenerator.generateRange(5, 15);
 							var truncXRotation = 0;
 							var truncYRotation = treeRandomGenerator.generateRange(-0.5, 0.5);
-							var treeId = 'tree' + cpt.toString();
-							var leafColor = [9, 179, 342];
-							var branchColor = [148, 80, 16];
 							var maxNumberOfChildren = 3;
 							var subBranchLengthFactor = 0.4;
-							var depth = 2;
+							var depth = 2;	
+							var treeId = 'tree' + cpt.toString();
 							var tree = treeGenerator.generateRandom(treeRandomGenerator, mainTruncLength, truncWidth, truncXRotation, truncYRotation, maxNumberOfChildren, subBranchLengthFactor, depth);
-							var treeGeometry = this.treeGeometryGenerator.generate(tree, treeRandomGenerator, branchColor, leafColor);
-							var treeModel = this.modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
 							var cellYCoordinates = cells.filter(cell => cell != null).map(cell => cell.height);
 							var yCoordinate =  Math.min(...cellYCoordinates) + (Math.min(...cellYCoordinates) - Math.min(...cellYCoordinates))/2;
-							treeModel.position = {x: xCoordinate, y: yCoordinate, z: zCoordinate};
-							result[treeId] = treeModel;
+							result[treeId] = {
+								treeStructure: tree,
+								position: {
+									x: xCoordinate,
+									y: yCoordinate,
+									z: zCoordinate,
+								},
+								//to remove, the geometry generator should not use the randomizaton at build time
+								randomeGenerator: treeRandomGenerator,
+							}
 							cpt++;
 						}
 					}
 				}
-
 			}	
 		}
 		console.log("number of trees created: "+cpt);
 		return result;
 	}
+}
+
+export class ForestGeometryGenerator {
+
+	generateGeometry(forest, modelFactory){
+		var result = {};
+		var treeGeometryGenerator = new TreeGeometryGenerator();
+		for (const [treeId, treeProperties] of Object.entries(forest)) {
+			var leafColor = [9, 179, 342];
+			var branchColor = [148, 80, 16];
+			var treeGeometry = treeGeometryGenerator.generate(treeProperties.treeStructure, treeProperties.randomeGenerator, branchColor, leafColor);
+			var treeModel = modelFactory.createAnimatedModelColored(treeId, treeGeometry.vertexes, treeGeometry.colors, treeGeometry.normals);
+			treeModel.position = treeProperties.position;
+			result[treeId] = treeModel;
+		}
+		return result;
+	}
+
 }
