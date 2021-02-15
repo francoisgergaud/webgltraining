@@ -151,6 +151,11 @@ var m4 = {
     ];
   },
 
+
+  identity: function() {
+    return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+  },
+
   translation: function(tx, ty, tz) {
     return [
        1,  0,  0,  0,

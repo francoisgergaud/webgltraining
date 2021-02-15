@@ -77,10 +77,62 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, 
 		geometry.normals.push(...normal, ...normal, ...normal);
 		geometry.colors.push(...color, ...color, ...color);
 	}
-	// for (var i=0, l=faces.length; i<l; i++) {
-	// 	var normal = m4.surfaceNormal(faces[i][1], faces[i][0], faces[i][2]);
-	// 	geometry.normals.push(...normal, ...normal, ...normal);
-	// 	geometry.colors.push(...[21, 153, 57], ...[21, 153, 57], ...[21, 153, 57]);
-	// }
 	return geometry;
+}
+
+export function createBoxVertexes(size, translation){
+	var x = size.x/2;
+	var y = size.y/2;
+	var z = size.z/2;
+	var vertexes = [
+		//front quad
+        -x, +y, -z,
+        -x, -y, -z,
+        +x, -y, -z,
+        -x, +y, -z,
+        +x, -y, -z,
+        +x, +y, -z,
+        //left quad
+        -x, +y, -z,
+        -x, +y, +z,
+        -x, -y, -z,
+        -x, +y, +z,
+        -x, -y, +z,
+        -x, -y, -z,
+        //top quad
+        -x, +y, +z,
+        -x, +y, -z,
+        +x, +y, -z,
+        -x, +y, +z,
+        +x, +y, -z,
+        +x, +y, +z,
+        //right quad
+        +x, +y, -z,
+        +x, -y, -z,
+        +x, -y, +z,
+        +x, +y, -z,
+        +x, -y, +z,
+        +x, +y, +z,
+		//behind quad
+        +x, +y, +z,
+        +x, -y, +z,
+        -x, -y, +z,
+        +x, +y, +z,
+        -x, -y, +z,
+        -x, +y, +z,
+        //bottom quad
+        -x, -y, -z,
+        -x, -y, +z,
+        +x, -y, +z,
+        -x, -y, -z,
+        +x, -y, +z,
+        +x, -y, -z,
+	];
+	var result = [];
+	var transformationMatrix = m4.translation(translation.x, translation.y, translation.z);
+	for (var i=0, l=vertexes.length; i<l; i+=3) {
+		var transformedVertex = m4.multiply1D(transformationMatrix, [vertexes[i], vertexes[i+1], vertexes[i+2], 1]);
+		result.push(transformedVertex[0], transformedVertex[1], transformedVertex[2]);
+	}
+	return result;
 }
