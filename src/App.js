@@ -9,12 +9,14 @@ import {MapCanvas, WebGLCanvas} from './RenderCanvas.js';
 import TransformationPanel from './transformationPanel.js';
 import {texturedFragmentShader, texturedVertexShader, texturedShaderAttributeNames, texturedShaderUniformNames} from './shaders/texturedShader.js';
 import {coloredFragmentShader, coloredVertexShader, coloredShaderAttributeNames, coloredShaderUniformNames} from './shaders/coloredShader.js';
+import {skinnedVertexShader, skinnedFragmentShader, skinnedShaderAttributeNames, skinnedShaderUniformNames} from './shaders/skinShader.js';
 import {LookAtCamera} from './utils/camera.js';
 import {InputController} from './utils/inputController.js';
 import {ModelFactory, ProgramInfo} from './model.js';
 import {TerrainFactory, TerrainGeometryGenerator} from './utils/terrainGenerator.js';
 import {ForestGenerator, ForestGeometryGenerator} from './utils/treeGenerator.js';
 import {Player} from './utils/player.js';
+import {SkinnedModel} from './utils/animalGenerator.js';
 
 class App extends React.Component {
 
@@ -78,6 +80,7 @@ class App extends React.Component {
     );
   }
 
+//
   /**
    * callback used when the 3D canvas did mount. At this point, the canvas3D ref is not set yet as the canvas3D component
    * has not completed it initialization:
@@ -95,6 +98,7 @@ class App extends React.Component {
     graphicContext.height = height;
     var colorProgramInfo = new ProgramInfo(glContext, coloredVertexShader, coloredFragmentShader, coloredShaderAttributeNames, coloredShaderUniformNames);
     var texturedProgramInfo = new ProgramInfo(glContext, texturedVertexShader, texturedFragmentShader, texturedShaderAttributeNames, texturedShaderUniformNames);
+    var skinnedProgramInfo = new ProgramInfo(glContext, skinnedVertexShader, skinnedFragmentShader, skinnedShaderAttributeNames, skinnedShaderUniformNames);
     //initialize the scene's models
     var factory = new ModelFactory(colorProgramInfo, texturedProgramInfo);
     var terrainGeometryGenerator = new TerrainGeometryGenerator();
@@ -103,9 +107,14 @@ class App extends React.Component {
     var waterModel = factory.createWaterModel('water', terrainGeometry.water.vertexes, terrainGeometry.water.colors);
     var forestGeometryGenerator = new ForestGeometryGenerator();
     var treeModels = forestGeometryGenerator.generateGeometry(this.trees, factory);
+    var animalModel = new SkinnedModel('prout', skinnedProgramInfo, this.terrain);
+    animalModel.position.x = ((this.terrain.gridWidth/2)-2) * this.terrain.cellSize;
+    animalModel.position.z = ((this.terrain.gridHeight/2)-2) * this.terrain.cellSize;
+    animalModel.position.y = 50;
     var models = {...treeModels};
     models['terrain'] = terrainModel;
     models['water'] = waterModel;
+    models['animal'] = animalModel;
     //set the camera
     var camera = new LookAtCamera(width, height, 1, 2000, 60 * Math.PI / 180);
     camera.rotation.y = 0;

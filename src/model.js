@@ -3,11 +3,13 @@ import {m4} from './utils/matrix.js';
 
 /**
  * A model with an update method and some velocity parameters to animate it.
+ * TODO split this class into an animated and non-animarted model
  */
 export class AnimatedModel {
 
   constructor(id, programInfo, vertexes, textureCoordinates){
     this.id = id;
+    this.runningCycle = 0;
     this.programInfo = programInfo;
     this.position = {
       x: 0,
@@ -34,7 +36,7 @@ export class AnimatedModel {
         zOffset: 10,
       },
       rotate: {
-        x: 0, /*180 to animate*/
+        x: 0,
         y: 0,
         z: 0,
       },

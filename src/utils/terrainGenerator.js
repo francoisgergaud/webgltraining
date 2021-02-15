@@ -37,6 +37,29 @@ export class Terrain{
 		}
 	}
 
+	getHeight(i, j){
+		var cells = this.getCells(i, j);
+		if(cells == null){
+			cells = {
+				'topLeft': 0,
+				'topRight': 0,
+				'bottomLeft': 0,
+				'bottomRight': 0,
+			};
+		}
+	    var xRatio = (i % this.cellSize) / this.cellSize;
+	    var zRatio = (j % this.cellSize) / this.cellSize;
+	    if(xRatio > zRatio){
+	    	var xInterpolation = cells['topLeft'].height + ((cells['topRight'].height - cells['topLeft'].height) * xRatio);
+	    	var zInterpolation = cells['topRight'].height + ((cells['bottomRight'].height - cells['topRight'].height) * zRatio);
+	    	return (xInterpolation + zInterpolation)/2;
+	    } else {
+	    	var xInterpolation = cells['bottomLeft'].height + ((cells['bottomRight'].height - cells['bottomLeft'].height) * xRatio);
+	    	var zInterpolation = cells['topLeft'].height + ((cells['bottomLeft'].height - cells['topLeft'].height) * zRatio);
+	    	return (xInterpolation + zInterpolation)/2;
+	    }
+	}
+
 	getCell(i,j){
 		var cellX = Math.floor(i/this.cellSize)
 		var cellY = Math.floor(j/this.cellSize)

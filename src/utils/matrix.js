@@ -151,6 +151,11 @@ var m4 = {
     ];
   },
 
+
+  identity: function() {
+    return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+  },
+
   translation: function(tx, ty, tz) {
     return [
        1,  0,  0,  0,
@@ -345,6 +350,25 @@ var m4 = {
     return m4.cross(m4.subtractVectors(a,b), m4.subtractVectors(b,c));
     //return m4.cross(m4.subtractVectors(b,c), m4.subtractVectors(a,b));
   },
+
+/**
+ * generate a transformation matrix from the transformation parameters. Transformation 
+ * @param  {[associative array} transformation parameter is an object of form
+ * {
+ *   scale: {x: <number>, y: <number>, z: <number>},
+ *   translation:{ x: <number>, y: <number>, z: <number>},
+ *   rotation: {x: <number>, y: <number>, z: <number>},
+ * }
+ * @return {number[16]} The 4*4 matrix representing the transformation in linear algebra.
+ */
+  generateTranformationMatrix(transformation){
+    var transformationMatrix = this.scaling(transformation.scale.x, transformation.scale.y, transformation.scale.z);
+    transformationMatrix = this.translate(transformationMatrix, transformation.translation.x, transformation.translation.y, transformation.translation.z);
+    transformationMatrix = this.xRotate(transformationMatrix, transformation.rotation.x);
+    transformationMatrix = this.yRotate(transformationMatrix, transformation.rotation.y);
+    transformationMatrix = this.zRotate(transformationMatrix, transformation.rotation.z);
+    return transformationMatrix;
+  }
 
 };
 

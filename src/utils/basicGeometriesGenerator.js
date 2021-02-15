@@ -77,10 +77,55 @@ export function generateIcosahedron(translation, xRadian, yRadian, scaleFactor, 
 		geometry.normals.push(...normal, ...normal, ...normal);
 		geometry.colors.push(...color, ...color, ...color);
 	}
-	// for (var i=0, l=faces.length; i<l; i++) {
-	// 	var normal = m4.surfaceNormal(faces[i][1], faces[i][0], faces[i][2]);
-	// 	geometry.normals.push(...normal, ...normal, ...normal);
-	// 	geometry.colors.push(...[21, 153, 57], ...[21, 153, 57], ...[21, 153, 57]);
-	// }
 	return geometry;
+}
+
+export function createBoxVertexes(size){
+	var x = size.x/2;
+	var y = size.y/2;
+	var z = size.z/2;
+	return [
+		//front quad
+        -x, +y, -z,
+        -x, -y, -z,
+        +x, -y, -z,
+        -x, +y, -z,
+        +x, -y, -z,
+        +x, +y, -z,
+        //left quad
+        -x, +y, -z,
+        -x, +y, +z,
+        -x, -y, -z,
+        -x, +y, +z,
+        -x, -y, +z,
+        -x, -y, -z,
+        //top quad
+        -x, +y, +z,
+        -x, +y, -z,
+        +x, +y, -z,
+        -x, +y, +z,
+        +x, +y, -z,
+        +x, +y, +z,
+        //right quad
+        +x, +y, -z,
+        +x, -y, -z,
+        +x, -y, +z,
+        +x, +y, -z,
+        +x, -y, +z,
+        +x, +y, +z,
+		//behind quad
+        +x, +y, +z,
+        +x, -y, +z,
+        -x, -y, +z,
+        +x, +y, +z,
+        -x, -y, +z,
+        -x, +y, +z,
+        //bottom quad
+        -x, -y, -z,
+        -x, -y, +z,
+        +x, -y, +z,
+        -x, -y, -z,
+        +x, -y, +z,
+        +x, -y, -z,
+	];
 }

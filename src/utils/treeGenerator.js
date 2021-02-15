@@ -1,5 +1,5 @@
 import {m4} from './matrix.js';
-import {generateIcosahedron} from './icosphereGenerator.js';
+import {generateIcosahedron} from './basicGeometriesGenerator.js';
 import {LinearCongruentialGenerator, generate2DPerlinNoise} from './randomUtils.js';
 
 /**

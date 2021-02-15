@@ -64,19 +64,8 @@ export class Player {
 		this.position.z += offsetZ;
 	    this.position.x += offsetX;
 
-	    var cells = this.terrain.getCells(this.position.x, this.position.z);
-	    var xRatio = (this.position.x % this.terrain.cellSize) / this.terrain.cellSize;
-	    var zRatio = (this.position.z % this.terrain.cellSize) / this.terrain.cellSize;
-	    if(xRatio > zRatio){
-	    	var xInterpolation = cells['topLeft'].height + ((cells['topRight'].height - cells['topLeft'].height) * xRatio);
-	    	var zInterpolation = cells['topRight'].height + ((cells['bottomRight'].height - cells['topRight'].height) * zRatio);
-	    	this.targetPositionY = (xInterpolation + zInterpolation)/2;
-	    } else {
-	    	var xInterpolation = cells['bottomLeft'].height + ((cells['bottomRight'].height - cells['bottomLeft'].height) * xRatio);
-	    	var zInterpolation = cells['topLeft'].height + ((cells['bottomLeft'].height - cells['topLeft'].height) * zRatio);
-	    	this.targetPositionY = (xInterpolation + zInterpolation)/2;
-	    }
-	    this.targetPositionY += this.terrain.cellSize;
+	    //the camera is a bit above the floor level, here cellSize is the height (could be anything else)
+	    this.targetPositionY = this.terrain.getHeight(this.position.x, this.position.z) + this.terrain.cellSize;
 
 		// smooth the vertical movement
 		if(this.position.y !== this.targetPositionY){
