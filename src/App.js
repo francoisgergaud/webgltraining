@@ -111,7 +111,7 @@ class App extends React.Component {
     animalModel.position.x = ((this.terrain.gridWidth/2)-2) * this.terrain.cellSize;
     animalModel.position.z = ((this.terrain.gridHeight/2)-2) * this.terrain.cellSize;
     animalModel.position.y = 50;
-    var models = {...treeModels};
+    var models = {};//{...treeModels};
     models['terrain'] = terrainModel;
     models['water'] = waterModel;
     models['animal'] = animalModel;

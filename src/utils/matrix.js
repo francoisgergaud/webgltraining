@@ -69,6 +69,12 @@ var m4 = {
     ];
   },
 
+/**
+ * multiply A's column by B's rows. For 3D transformation, this mean the A (global) transformation is applied over B (local)
+ * @param  {[type]} a [description]
+ * @param  {[type]} b [description]
+ * @return {[type]}   [description]
+ */
   multiply: function(a, b) {
     var a00 = a[0 * 4 + 0];
     var a01 = a[0 * 4 + 1];
@@ -362,11 +368,12 @@ var m4 = {
  * @return {number[16]} The 4*4 matrix representing the transformation in linear algebra.
  */
   generateTranformationMatrix(transformation){
-    var transformationMatrix = this.scaling(transformation.scale.x, transformation.scale.y, transformation.scale.z);
-    transformationMatrix = this.translate(transformationMatrix, transformation.translation.x, transformation.translation.y, transformation.translation.z);
+    var transformationMatrix = this.identity();
+    transformationMatrix = this.scale(transformationMatrix, transformation.scale.x, transformation.scale.y, transformation.scale.z);
     transformationMatrix = this.xRotate(transformationMatrix, transformation.rotation.x);
     transformationMatrix = this.yRotate(transformationMatrix, transformation.rotation.y);
     transformationMatrix = this.zRotate(transformationMatrix, transformation.rotation.z);
+    transformationMatrix = this.translate(transformationMatrix, transformation.translation.x, transformation.translation.y, transformation.translation.z);
     return transformationMatrix;
   }
 

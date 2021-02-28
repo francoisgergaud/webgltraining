@@ -15,107 +15,48 @@ export class SkinnedModel extends AnimatedModel {
 	constructor(id, programInfo, terrain){
         super(id, programInfo, [], null);
         this.terrain = terrain;
+        var bodyBindPose = {translation: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: Math.PI*0.2}, scale: {x: 1, y: 1, z: 1}};
+        var leftLegBindPose = {translation: {x: 0, y: -15, z: -10}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
+        var rightLegBindPose = {translation: {x: 0, y: -15, z: +10}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
+        var headBindPose = {translation: {x: 20, y: 30, z: 0}, rotation: {x: 0, y: 0, z: 0-Math.PI*0.1}, scale: {x: 1, y: 1, z: 1}};
+        var righEyeBindPose = {translation: {x: 0, y: 0, z: -12}, rotation: {x: 0, y: 0, z: 0},scale: {x: 1, y: 1, z: 1}};
+        var rightEyebrowBindPose = {translation: {x: 0, y: 0, z: -1}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
+        
         this.rootModel = {
-			boneIdx: 0,
-            size: {x: 40, y: 20, z: 20},
+            boneName: 'body',
+			size: {x: 40, y: 20, z: 30},
             color: [241, 245, 24],
-            initialPose: {
-                translation: {x: 0, y: 0, z: 0}, 
-                rotation: {x: 0, y: 0, z: Math.PI*0.2}, 
-                scale: {x: 1, y: 1, z: 1}
-            },
+            initialPose: bodyBindPose,
 			children: [
 				{
-					boneIdx: 1,
-                    size: {x: 15, y: 15, z: 10},
+                    boneName: 'leftLeg',
+                    size: {x: 15, y: 5, z: 10},
 					color: [245, 24, 223],
-                    initialPose: {
-                        translation: {x: -15, y: -15, z: -10}, 
-                        rotation: {x: 0, y: 0, z: -Math.PI*0.2}, 
-                        scale: {x: 1, y: 1, z: 1}
-                    },
+                    initialPose: leftLegBindPose,
 				},
 				{
-					boneIdx: 2,
-                    size: {x: 15, y: 15, z: 10},
+                    boneName: 'rightLeg',
+                    size: {x: 15, y: 5, z: 10},
 					color: [3, 252, 232],
-                    initialPose: {
-                        translation: {x: -15, y: -15, z: +10}, 
-                        rotation: {x: 0, y: 0, z: -Math.PI*0.2}, 
-                        scale: {x: 1, y: 1, z: 1}
-                    },
+                    initialPose: rightLegBindPose,
 				},
 				{
-					boneIdx: 3,
-                    size: {x: 20, y: 10, z: 20},
+                    boneName: 'head',
+                    size: {x: 20, y: 10, z: 10},
 					color: [17, 247, 244],
-                    initialPose: {
-                        translation: {x: +30, y: 15, z: +0}, 
-                        rotation: {x: 0, y: 0, z: Math.PI*-0.25}, 
-                        scale: {x: 1, y: 1, z: 1}
-                    },
+                    initialPose: headBindPose,
                     children : [
                         {
-                            boneIdx: 3,
+                            boneName: 'rightEye',
                             size: {x: 5, y: 5, z: 1},
                             color: [242, 250, 250],
-                            initialPose: {
-                                translation: {x: 0, y: 0, z: +12}, 
-                                rotation: {x: 0, y: 0, z: 0}, 
-                                scale: {x: 1, y: 1, z: 1}
-                            },
+                            initialPose: righEyeBindPose,
                             children : [
                             {
-                                boneIdx: 3,
-                                size: {x: 2, y: 2, z: 1},
-                                color: [0, 0, 0],
-                                initialPose: {
-                                    translation: {x: 0, y: 0, z: +1}, 
-                                    rotation: {x: 0, y: 0, z: 0}, 
-                                    scale: {x: 1, y: 1, z: 1}
-                                },
-                            },
-                            {
-                                boneIdx: 3,
+                                boneName: 'rightEyebrow',
                                 size: {x: 8, y: 2, z: 1},
                                 color: [0, 0, 0],
-                                initialPose: {
-                                    translation: {x: 0, y: 5, z: +1}, 
-                                    rotation: {x: 0, y: 0, z: 0}, 
-                                    scale: {x: 1, y: 1, z: 1}
-                                },
-                            }
-                            ]
-                        },
-                        {
-                            boneIdx: 3,
-                            size: {x: 5, y: 5, z: 1},
-                            color: [242, 250, 250],
-                            initialPose: {
-                                translation: {x: 0, y: 0, z: -12}, 
-                                rotation: {x: 0, y: 0, z: 0}, 
-                                scale: {x: 1, y: 1, z: 1}
-                            },
-                            children : [
-                            {
-                                boneIdx: 3,
-                                size: {x: 2, y: 2, z: 1},
-                                color: [0, 0, 0],
-                                initialPose: {
-                                    translation: {x: 0, y: 0, z: -1}, 
-                                    rotation: {x: 0, y: 0, z: 0}, 
-                                    scale: {x: 1, y: 1, z: 1}
-                                },
-                            },
-                            {
-                                boneIdx: 3,
-                                size: {x: 8, y: 2, z: 1},
-                                color: [0, 0, 0],
-                                initialPose: {
-                                    translation: {x: 0, y: 5, z: -1}, 
-                                    rotation: {x: 0, y: 0, z: 0}, 
-                                    scale: {x: 1, y: 1, z: 1}
-                                },
+                                initialPose: rightEyebrowBindPose,
                             },
                             ]
                         },
@@ -125,116 +66,163 @@ export class SkinnedModel extends AnimatedModel {
 			]
 		};
         //TODO:relate the indexes dynamically between model and bones
-        var zeroBindPose = {translation: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
-        var leftLegBindPose = {translation: {x: -20, y: -20, z: -20}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
-        var rightLegBindPose = {translation: {x: -20, y: -20, z: +20}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
-        var headBindPose = {translation: {x: +30, y: 25, z: +0}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}};
-        this.runningCycle = 0;
-        //update method per bone index
-        //TODO: animation cannot modify bindPose. The bindPose stay unchanged, the "transformation is built from bindpose and
-        // the current translation/rotation, then the matrix built
-        this.animation = [
-            function(runningCycle){
-                return {
-                    translation: {
-                        x: Math.sin(runningCycle*8) * 5,
-                        y: Math.cos(runningCycle*8) * 5,
-                        z:0,
-                    },
-                    rotation: {
-                        x: -Math.cos(runningCycle*4) * 0.3,
-                        y:0,
-                        z:0,
-                    },
-                    scale: {
-                        x:1,
-                        y:1,
-                        z:1,
-                    },
-                }
-
-            },
-            function(runningCycle){
-                return {
-                    translation: {
-                        x: 0,
-                        y: Math.max(0, Math.cos(Math.PI+runningCycle*4) * 10) - Math.abs(Math.cos(runningCycle*4) * 10),
-                        z:0,
-                    },
-                    rotation: {
-                        x: Math.cos(runningCycle*4) * 0.3,
-                        y:0,
-                        z:0,
-                    },
-                    scale: {
-                        x:1,
-                        y:1,
-                        z:1,
-                    },
-                }
-            },
-            function(runningCycle){
-                return {
-                    translation: {
-                        x: 0,
-                        y: Math.max(0, Math.cos(runningCycle*4) * 10) - Math.abs(Math.cos(runningCycle*4) * 10),
-                        z:0,
-                    },
-                    rotation: {
-                        x: Math.cos(runningCycle*4) * 0.3,
-                        y: 0,
-                        z: 0,
-                    },
-                    scale: {
-                        x:1,
-                        y:1,
-                        z:1,
-                    },
-                }
-            },
-            function(runningCycle){
-                return {
-                    translation: {
-                        x:0,
-                        y: -Math.abs(Math.cos(runningCycle*4) * 15),
-                        z:0,
-                    },
-                    rotation: {
-                        x: Math.cos(runningCycle*4)*0.04 - Math.cos(runningCycle*4) * 0.3,
-                        y: Math.cos(runningCycle*4)*0.02,
-                        z:0,
-                    },
-                    scale: {
-                        x:1,
-                        y:1,
-                        z:1,
-                    },
-                }
-            },
-        ]
         this.bones = {
-            id: 'body',
-            idx: 0,
-            bindPose: zeroBindPose,
+            name: 'body',
+            //idx: 0,
+            //boneID: 
+            bindPose: bodyBindPose,
             'children': [
                 {
-                    id: 'leftLeg',
-                    idx: 1,
+                    name: 'leftLeg',
+                    //idx: 1,
                     bindPose: leftLegBindPose,
                 },
                 {
-                    id: 'rightLeg',
-                    idx: 2,
+                    name: 'rightLeg',
+                    //idx: 2,
                     bindPose: rightLegBindPose,
                 },
                 {
-                    id: 'head',
-                    idx: 3,
+                    name: 'head',
+                    //idx: 3,
                     bindPose: headBindPose,
+                    'children': [
+                        {
+                            name: 'rightEye',
+                            //idx: 4,
+                            bindPose: righEyeBindPose,
+                            'children': [
+                                {
+                                    name: 'rightEyebrow',
+                                    //idx: 5,
+                                    bindPose: rightEyebrowBindPose,
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         };
+        this.orderedBones = this._initializeBoneArray(this.bones, this.rootModel);
+        this.runningCycle = 0;
+        //update method per bone index
+        var animation = {};
+        animation['body'] = function(runningCycle){
+            return {
+                translation: {
+                    x: Math.sin(runningCycle*8) * 5,
+                    y: Math.cos(runningCycle*8) * 5,
+                    z: 0,
+                },
+                rotation: {
+                    x: -Math.cos(runningCycle*4) * 0.2,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
 
+        };
+        animation['leftLeg'] = function(runningCycle){
+            return {
+                translation: {
+                    x: 0,
+                    y: Math.max(0, Math.cos(Math.PI+runningCycle*4) * 10) - Math.abs(Math.cos(runningCycle*4) * 10),
+                    z: 0,
+                },
+                rotation: {
+                    x: Math.cos(runningCycle*4) * 0.2,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
+        };
+        animation['rightLeg'] = function(runningCycle){
+            return {
+                translation: {
+                    x: 0,
+                    y: Math.max(0, Math.cos(runningCycle*4) * 10) - Math.abs(Math.cos(runningCycle*4) * 10),
+                    z: 0,
+                },
+                rotation: {
+                    x: Math.cos(runningCycle*4) * 0.3,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
+        };
+        animation['head'] = function(runningCycle){
+            return {
+                translation: {
+                    x: 0,
+                    y: -Math.abs(Math.cos(runningCycle*4) * 15),
+                    z: 0,
+                },
+                rotation: {
+                    x: Math.cos(runningCycle*4)*0.04 - Math.cos(runningCycle*4) * 0.3,
+                    y: Math.cos(runningCycle*4)*0.02,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
+        };
+        animation['rightEye'] = function(runningCycle){
+            return {
+                translation: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
+        };
+        animation['rightEyebrow'] = function(runningCycle){
+            return {
+                translation: {
+                    x: 0,
+                    y: 0,//Math.abs(Math.cos(runningCycle*4) * 15),
+                    z: 0,
+                },
+                rotation: {
+                    x: 0,//-Math.cos(runningCycle*4)*0.04 - Math.cos(runningCycle*4) * 0.3,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                },
+            }
+        };
+        this.animation = animation;
         var geometry = this.generateGeometry(this.rootModel, null);
         this.bones = this.initializeBones(this.bones, null);
         
@@ -296,7 +284,6 @@ export class SkinnedModel extends AnimatedModel {
     }
 
     generateGeometry(geometryNode, parentTransformationMatrix){
-        //cal build box directly here
         var geometryVertexes = createBoxVertexes(geometryNode.size);
         var normals = [];
         var colors = [];
@@ -334,11 +321,11 @@ export class SkinnedModel extends AnimatedModel {
     }
 
     initializeBones(boneNode, parent){
-        var boneTranformationMatrix = m4.generateTranformationMatrix(boneNode.bindPose);
-        boneNode.bonePoseInverseMatrix = m4.inverse(boneTranformationMatrix);
+        boneNode.bindPoseMatrix = m4.generateTranformationMatrix(boneNode.bindPose);
         if(parent!=null){
-            boneNode.bonePoseInverseMatrix = m4.multiply(boneNode.bonePoseInverseMatrix, parent.bonePoseInverseMatrix);
+            boneNode.bindPoseMatrix = m4.multiply(parent.bindPoseMatrix, boneNode.bindPoseMatrix);
         }
+        boneNode.bonePoseInverseMatrix = m4.inverse(boneNode.bindPoseMatrix);
         if(boneNode.children != null){
             for(var i=0, l= boneNode.children.length; i < l; i++) {
                 this.initializeBones(boneNode.children[i], boneNode);
@@ -350,9 +337,10 @@ export class SkinnedModel extends AnimatedModel {
     // update the bones matrices uniforms and set them
     update(deltaTimeSecond){
         this.runningCycle += deltaTimeSecond;
-        this.boneRecursiveUpdate(this.runningCycle, null, this.bones);
-        this.position.x+=Math.abs(Math.sin(this.runningCycle*4) * 0.8);
+        //this.position.x+=Math.abs(Math.sin(this.runningCycle*4) * 0.8);
         this.position.y= 15 + this.terrain.getHeight(this.position.x, this.position.z);
+        this.boneRecursiveUpdate(this.runningCycle, null, this.bones);
+        
     }
 
     /**
@@ -363,31 +351,25 @@ export class SkinnedModel extends AnimatedModel {
      * @return {None}
      */
     boneRecursiveUpdate(runningCycle, parent, bone){
-        var transformation = this.animation[bone.idx](runningCycle);
-        //merge the transformation with the bindPose
-        transformation.translation.x+=bone.bindPose.translation.x;
-        transformation.translation.y+=bone.bindPose.translation.y;
-        transformation.translation.z+=bone.bindPose.translation.z;
-        transformation.rotation.x+=bone.bindPose.rotation.x;
-        transformation.rotation.y+=bone.bindPose.rotation.y;
-        transformation.rotation.z+=bone.bindPose.rotation.z;
-        transformation.scale.x*=bone.bindPose.scale.x;
-        transformation.scale.y*=bone.bindPose.scale.y;
-        transformation.scale.z*=bone.bindPose.scale.z;
-
-        //generate the 
-        var transformationMatrix = m4.generateTranformationMatrix(transformation);
+        //generate the transformation matrix for the current state of animation
+        var boneTransformation = this.animation[bone.name](runningCycle);
+        bone.transformationMatrix = m4.generateTranformationMatrix(boneTransformation);
+        bone.transformationMatrix = m4.multiply(bone.bindPoseMatrix, bone.transformationMatrix);
+        //transformation matrix is using bone.local coordinates. The translation would be empty. We need to multiply if by the bone
+        //local bind-position
+        bone.transformationMatrix = m4.multiply(bone.transformationMatrix, bone.bonePoseInverseMatrix);
+        //apply the parent´s global-transformation on the bone local-transformation
         if(parent != null){
-            transformationMatrix = m4.multiply(transformationMatrix, parent.transformationMatrix); 
+            bone.transformationMatrix = m4.multiply(parent.transformationMatrix, bone.transformationMatrix);
         }
-        //bonePoseInverse has been setup for all bones by the initializeBones function
-        bone.transformationMatrix = m4.multiply(transformationMatrix, bone.bonePoseInverseMatrix);
+        
         if(bone.children != null){
             for(var i=0, l= bone.children.length; i < l; i++) {
                 this.boneRecursiveUpdate(runningCycle, bone, bone.children[i]);
             }
         }
     }
+
 
     //set the bones in uniform
     render(viewProjectionMatrix, lightDirection){
@@ -412,11 +394,42 @@ export class SkinnedModel extends AnimatedModel {
         gl.uniform3fv(this.programInfo.uniformLocations['u_reverseLightDirection'], m4.normalize(lightDirection));
 
         //set the bones
-        var bonesMatrices = [...this.bones.transformationMatrix, ...this.bones['children'][0].transformationMatrix, ...this.bones['children'][1].transformationMatrix, ...this.bones['children'][2].transformationMatrix];
+        var bonesMatrices = [];
+        for(var i =0, l= this.orderedBones.length; i<l; i++){
+            bonesMatrices.push(...this.orderedBones[i].transformationMatrix);
+        }
+        //var bonesMatrices = [...this.bones.transformationMatrix, ...this.bones['children'][0].transformationMatrix, ...this.bones['children'][1].transformationMatrix, ...this.bones['children'][2].transformationMatrix, ...this.bones['children'][2]['children'][0].transformationMatrix, ...this.bones['children'][2]['children'][0]['children'][0].transformationMatrix];
         var bonesMatricesForUniform = new Float32Array(bonesMatrices);
         gl.uniformMatrix4fv(this.programInfo.uniformLocations['u_bones'], false, bonesMatricesForUniform);
 
         // Draw the geometry.
         gl.drawArrays(gl.TRIANGLES, 0, this.numberOfVertexes);
+    }
+
+    _initializeBoneArray(boneRootNode, modelRootNode){
+        var boneNodeOrderedList = [];
+        var tempStack = [boneRootNode];
+        var boneIndexByName = {};
+        while(tempStack.length > 0) {
+            var boneNode = tempStack.pop();
+            boneNodeOrderedList.push(boneNode);
+            boneIndexByName[boneNode.name] = boneNodeOrderedList.length-1;
+            if(boneNode.children != null){
+                for(var i=0, l= boneNode.children.length; i < l; i++) {
+                    tempStack.push(boneNode.children[i]);
+                }
+            }
+        }
+        tempStack = [modelRootNode];
+        while(tempStack.length > 0) {
+            var modelNode = tempStack.pop();
+            modelNode.boneIdx = boneIndexByName[modelNode.boneName];
+            if(modelNode.children != null){
+                for(var i=0, l= modelNode.children.length; i < l; i++) {
+                    tempStack.push(modelNode.children[i]);
+                }
+            }
+        }
+        return boneNodeOrderedList;
     }
 }
